@@ -24,8 +24,8 @@ jobs:
             cd /root/Oz_Backand
 
             # 2) 현재 브랜치 강제 동기화
-            branch=$BRANCH
-            echo "[DEBUG] Syncing branch '$branch' with origin"
+            branch=$(git rev-parse --abbrev-ref HEAD)
+            echo "[DEBUG] Detected branch '$branch', syncing with origin"
             git fetch --all
             git reset --hard origin/$branch
 
