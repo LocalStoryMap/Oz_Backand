@@ -1,0 +1,67 @@
+name: Deploy
+
+on:
+  push:
+    branches: [dev, main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 223.130.152.69
+          username: root
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            set -e
+            echo "🚀 배포 시작..."
+
+            # 1) 프로젝트 폴더 이동
+            cd /root/Oz_Backand
+
+            # 2) 최신 코드 가져오기
+            git fetch --all
+            git pull origin dev || git pull origin main
+
+            # 3) 앱 디렉토리로 이동
+            if [ -d "LocalStoryMap" ]; then
+              cd LocalStoryMap
+            fi
+
+            # 4) Poetry 환경 설정
+            export PATH="/root/.local/bin:$PATH"
+            poetry env use python3.13 || true
+
+            # 5) 의존성 설치
+            poetry install --no-interaction --no-ansi --no-root
+
+            # 6) .env 파일 작성
+            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
+            echo "DEBUG=False"                       >> .env
+            echo "ALLOWED_HOSTS=223.130.152.69,localhost,127.0.0.1" >> .env
+
+            # 7) 이전 runserver 종료 (PID 파일 방식)
+            if [ -f /root/runserver.pid ]; then
+              oldpid=$(cat /root/runserver.pid) || true
+              echo "🔪 Killing old runserver pid=$oldpid"
+              kill "$oldpid" 2>/dev/null || true
+              rm /root/runserver.pid
+            fi
+
+            # 8) 서버 시작 (백그라운드 + PID 파일 기록)
+            nohup poetry run python manage.py runserver 0.0.0.0:8000 \
+              > /root/server.log 2>&1 &
+            echo $! > /root/runserver.pid
+            echo "🚀 Started runserver with PID=$(cat /root/runserver.pid)"
+
+            # 9) 배포 성공 확인
+            sleep 5
+            if kill -0 "$(cat /root/runserver.pid)" 2>/dev/null; then
+              echo "✅ 배포 성공! http://223.130.152.69:8000"
+            else
+              echo "❌ 서버 시작 실패"
+              tail -n 50 /root/server.log
+              exit 1
+            fi

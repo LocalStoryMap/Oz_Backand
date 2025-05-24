@@ -1,0 +1,52 @@
+cat > .gitignore << 'EOF'
+# ===== macOS =====
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ===== Python =====
+__pycache__/
+*.py[cod] 
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+
+# ===== Django =====
+*.log
+*.sqlite3
+*.sqlite3-journal
+media/
+staticfiles/
+local_settings.py
+
+# ===== Poetry =====
+.venv/
+
+# ===== Environment =====
+.env
+.env.local
+.env.development
+.env.production
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ===== Logs =====
+logs/
+*.log
+
+# ===== Temporary =====
+*.tmp
+*.temp
+*.bak
+EOF
+
+
