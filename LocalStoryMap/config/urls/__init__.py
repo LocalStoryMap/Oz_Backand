@@ -1,8 +1,9 @@
 import os
 
-# 기본적으로 개발 환경 URL 사용
-from config.urls.urls_dev import *
+# 기본적으로 개발 환경 URL 설정을 사용
+env = os.environ.get('DJANGO_ENV', 'dev')
 
-# 환경 변수에 따라 배포 환경 URL 사용
-if os.environ.get('DJANGO_SETTINGS_MODULE') == 'config.settings.prod':
-    from config.urls.urls_prod import *
+if env == 'production' or env == 'prod':
+    from .urls_prod import urlpatterns
+else:
+    from .urls_dev import urlpatterns
