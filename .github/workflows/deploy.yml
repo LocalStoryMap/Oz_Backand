@@ -22,9 +22,10 @@ jobs:
             cd /root/Oz_Backand
 
             # 2) 현재 브랜치 강제 동기화
-            echo "[DEBUG] Syncing branch '$BRANCH' with origin"
+            branch=${GITHUB_REF_NAME}
+            echo "[DEBUG] Syncing branch '$branch' with origin"
             git fetch --all
-            git reset --hard origin/${BRANCH}
+            git reset --hard origin/$branch
 
             # 3) 앱 디렉토리로 이동
             if [ -d "LocalStoryMap" ]; then
