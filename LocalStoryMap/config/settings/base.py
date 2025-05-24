@@ -47,9 +47,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# 프로덕션용 URL 설정으로 변경
-ROOT_URLCONF = 'config.urls.urls_prod'
-
 # ─── 템플릿 설정 ──────────────────────────────────────────
 TEMPLATES = [
     {
