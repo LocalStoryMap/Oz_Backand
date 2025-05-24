@@ -22,10 +22,9 @@ jobs:
             cd /root/Oz_Backand
 
             # 2) 현재 브랜치 강제 동기화
-            branch=${GITHUB_REF##*/}
-            echo "[DEBUG] Syncing branch '$branch' with origin"
+            echo "[DEBUG] Syncing branch '$BRANCH' with origin"
             git fetch --all
-            git reset --hard origin/$branch
+            git reset --hard origin/${BRANCH}
 
             # 3) 앱 디렉토리로 이동
             if [ -d "LocalStoryMap" ]; then
@@ -41,7 +40,7 @@ jobs:
 
             # 6) .env 파일 작성
             echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
-            echo "DEBUG=False"                       >> .env
+            echo "DEBUG=False" >> .env
             echo "ALLOWED_HOSTS=223.130.152.69,localhost,127.0.0.1" >> .env
 
             # 7) 이전 runserver 종료 (PID 파일 방식)
@@ -61,7 +60,7 @@ jobs:
             # 9) 배포 성공 확인
             sleep 5
             if kill -0 "$(cat /root/runserver.pid)" 2>/dev/null; then
-              echo "✅ 배포 성공! http://223.130.152.69:8000"
+             echo "✅ 배포 성공! http://223.130.152.69:8000"
             else
               echo "❌ 서버 시작 실패"
               tail -n 50 /root/server.log
