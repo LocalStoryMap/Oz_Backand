@@ -21,9 +21,11 @@ jobs:
             # 1) 프로젝트 폴더 이동
             cd /root/Oz_Backand
 
-            # 2) 최신 코드 가져오기
+            # 2) 현재 브랜치 강제 동기화
+            branch=${GITHUB_REF##*/}
+            echo "[DEBUG] Syncing branch '$branch' with origin"
             git fetch --all
-            git pull origin dev || git pull origin main
+            git reset --hard origin/$branch
 
             # 3) 앱 디렉토리로 이동
             if [ -d "LocalStoryMap" ]; then
