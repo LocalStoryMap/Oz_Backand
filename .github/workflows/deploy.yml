@@ -10,6 +10,8 @@ jobs:
     steps:
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          BRANCH: ${{ github.ref_name }}
         with:
           host: 223.130.152.69
           username: root
@@ -22,7 +24,7 @@ jobs:
             cd /root/Oz_Backand
 
             # 2) 현재 브랜치 강제 동기화
-            branch=${GITHUB_REF_NAME}
+            branch=$BRANCH
             echo "[DEBUG] Syncing branch '$branch' with origin"
             git fetch --all
             git reset --hard origin/$branch
