@@ -1,4 +1,4 @@
-from config.settings.base import *
+from .base import *
 
 # 프로덕션에서는 디버그 모드 비활성화
 DEBUG = False

@@ -1,4 +1,4 @@
-
+import os
 
 # 기본적으로 개발 환경 설정 사용
 from config.settings.dev import *
