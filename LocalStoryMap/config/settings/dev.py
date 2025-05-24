@@ -4,6 +4,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+# 개발용 URL 설정
+ROOT_URLCONF = 'config.urls.urls_dev'
+
 # 개발용 SQLite 데이터베이스
 DATABASES = {
     'default': {

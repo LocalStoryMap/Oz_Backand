@@ -1,5 +1,13 @@
 from .base import *
 
+# 로그 디렉토리 생성 (존재하지 않을 경우)
+logs_dir = BASE_DIR / 'logs'
+if not logs_dir.exists():
+    logs_dir.mkdir(exist_ok=True)
+
+# 프로덕션용 URL 설정
+ROOT_URLCONF = 'config.urls.urls_prod'
+
 # 프로덕션에서는 디버그 모드 비활성화
 DEBUG = False
 

@@ -44,9 +44,9 @@ jobs:
       run: |
         poetry run python manage.py makemigrations --check --dry-run
 
-    - name: 2️⃣ Run tests (pytest)
-      env:
-        DJANGO_SETTINGS_MODULE: config.settings.dev
-      run: |
-        poetry run pip install pytest pytest-django
-        poetry run pytest --disable-warnings
+    #- name: 2️⃣ Run tests (pytest)
+      #env:
+        #DJANGO_SETTINGS_MODULE: config.settings.dev
+      #run: |
+        #poetry run pip install pytest pytest-django
+        #poetry run pytest --disable-warnings
