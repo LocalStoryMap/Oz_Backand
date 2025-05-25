@@ -52,10 +52,14 @@ INSTALLED_APPS += [
     'storages',
 ]
 
-# 🔥 네이버 클라우드 Object Storage 설정
-USE_S3_STORAGE = os.getenv('USE_S3_STORAGE', 'True').lower() == 'true'
+# 🔥 강제 S3 활성화 (조건문 제거)
+USE_S3_STORAGE = os.getenv('USE_S3_STORAGE', 'False').lower() == 'true'
 
-if USE_S3_STORAGE:
+print(f"🔍 S3 설정 디버그: USE_S3_STORAGE={USE_S3_STORAGE}, 환경변수={os.getenv('USE_S3_STORAGE')}")
+
+if USE_S3_STORAGE and S3Boto3Storage:
+    print("🔥 S3 스토리지 활성화!")
+
     # S3 호환 Object Storage 설정
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
@@ -70,31 +74,19 @@ if USE_S3_STORAGE:
     # 추가 S3 설정
     AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_OBJECT_PARAMETERS = {
-        'CacheControl': 'max-age=86400',  # 24시간 캐시
+        'CacheControl': 'max-age=86400',
     }
-    AWS_QUERYSTRING_AUTH = False  # URL에 인증 파라미터 제거
+    AWS_QUERYSTRING_AUTH = False
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com'
 
     # URL 설정
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 
-    # 커스텀 스토리지 클래스 (선택사항)
-    if S3Boto3Storage:
-        class StaticStorage(S3Boto3Storage):
-            location = 'static'
-            default_acl = 'public-read'
+    print(f"✅ S3 URL 설정: STATIC_URL={STATIC_URL}")
 
-
-        class MediaStorage(S3Boto3Storage):
-            location = 'media'
-            default_acl = 'public-read'
-            file_overwrite = False
-
-        # 커스텀 스토리지 사용 (옵션)
-        # STATICFILES_STORAGE = 'config.settings.prod.StaticStorage'
-        # DEFAULT_FILE_STORAGE = 'config.settings.prod.MediaStorage'
 else:
+    print("⚠️ S3 비활성화 - 로컬 스토리지 사용")
     # 로컬 파일 시스템 사용
     STATIC_URL = '/static/'
     STATIC_ROOT = BASE_DIR / 'staticfiles'
