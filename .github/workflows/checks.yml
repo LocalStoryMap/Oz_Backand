@@ -20,10 +20,14 @@ jobs:
       with:
         python-version: '3.13'
 
-    - name: Install Poetry
+    - name: Install Poetry (최신 버전)
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Verify Poetry version
+      run: |
+        poetry --version
 
     - name: Set Python version in pyproject.toml
       run: |
@@ -42,7 +46,7 @@ jobs:
 
     - name: 🚫 Fail if there are missing migrations
       run: |
-        poetry run python manage.py makemigrations --check --dry-run
+        poetry run python manage.py makemigrations --check --dry-run --settings=config.settings.dev
 
     #- name: 2️⃣ Run tests (pytest)
       #env:
