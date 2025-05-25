@@ -32,7 +32,7 @@ DATABASES = {
         'HOST': os.getenv('NCP_DB_HOST'),  # NCP 엔드포인트
         'PORT': os.getenv('NCP_DB_PORT', '5432'),
         'OPTIONS': {
-            'sslmode': 'require',  # SSL 연결 활성화 (필요한 경우)
+            'sslmode': 'disable',  # SSL 연결 활성화 (필요한 경우)
         },
     }
 }
