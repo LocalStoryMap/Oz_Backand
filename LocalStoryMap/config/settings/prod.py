@@ -1,43 +1,51 @@
 from .base import *
 
-# 로그 디렉토리 생성 (존재하지 않을 경우)
+# 로그/정적 파일 디렉토리 설정
 logs_dir = BASE_DIR / 'logs'
 if not logs_dir.exists():
     logs_dir.mkdir(exist_ok=True)
 
-# 프로덕션용 URL 설정
+static_dir = BASE_DIR / 'static'
+if not static_dir.exists():
+    static_dir.mkdir(exist_ok=True)
+
+# 프로덕션 설정
+DEBUG = False
 ROOT_URLCONF = 'config.urls.urls_prod'
 
-# 프로덕션에서는 디버그 모드 비활성화
-DEBUG = False
-
-# 실제 운영 도메인으로 변경 (보안상 '*' 사용 지양)
+# 도메인 설정
 ALLOWED_HOSTS = [
-    'yourdomain.com',  # 실제 도메인으로 변경
+    'yourdomain.com',
     'www.yourdomain.com',
+    # 개발 중인 경우 추가
+    'localhost',
+    '127.0.0.1',
 ]
 
-# 프로덕션 데이터베이스 설정 (base.py의 설정을 그대로 사용하거나 오버라이드)
+# 네이버 클라우드 PostgreSQL 설정
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', 'django_db'),
-        'USER': os.getenv('DB_USER', ''),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('NCP_DB_NAME'),
+        'USER': os.getenv('NCP_DB_USER'),
+        'PASSWORD': os.getenv('NCP_DB_PASSWORD'),
+        'HOST': os.getenv('NCP_DB_HOST'),  # NCP 엔드포인트
+        'PORT': os.getenv('NCP_DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': 'require',  # SSL 연결 활성화 (필요한 경우)
+        },
     }
 }
 
-# 강화된 보안 설정
-SECURE_HSTS_SECONDS = 31536000  # 1년
+# 나머지 프로덕션 설정...
+SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# 로깅 설정
+# 로깅 설정...
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -45,7 +53,7 @@ LOGGING = {
         'file': {
             'level': 'ERROR',
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'error.log',  # 로컬 로그 디렉토리 사용
+            'filename': logs_dir / 'error.log',
         },
         'console': {
             'level': 'INFO',
@@ -60,3 +68,4 @@ LOGGING = {
         },
     },
 }
+
