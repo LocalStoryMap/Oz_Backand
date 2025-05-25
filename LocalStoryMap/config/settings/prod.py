@@ -33,6 +33,7 @@ DATABASES = {
         'PORT': os.getenv('NCP_DB_PORT', '5432'),
         'OPTIONS': {
             'sslmode': 'disable',  # SSL 연결 활성화 (필요한 경우)
+            'options': '-c search_path=public',
         },
     }
 }
