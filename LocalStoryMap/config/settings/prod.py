@@ -15,11 +15,11 @@ ROOT_URLCONF = 'config.urls.urls_prod'
 
 # 도메인 설정
 ALLOWED_HOSTS = [
-    'yourdomain.com',
-    'www.yourdomain.com',
-    # 개발 중인 경우 추가
+    '223.130.152.69',  # 서버 IP
     'localhost',
     '127.0.0.1',
+    'yourdomain.com',
+    'www.yourdomain.com',
 ]
 
 # 네이버 클라우드 PostgreSQL 설정
@@ -29,24 +29,26 @@ DATABASES = {
         'NAME': os.getenv('NCP_DB_NAME'),
         'USER': os.getenv('NCP_DB_USER'),
         'PASSWORD': os.getenv('NCP_DB_PASSWORD'),
-        'HOST': os.getenv('NCP_DB_HOST'),  # NCP 엔드포인트
+        'HOST': os.getenv('NCP_DB_HOST'),
         'PORT': os.getenv('NCP_DB_PORT', '5432'),
         'OPTIONS': {
-            'sslmode': 'disable',  # SSL 연결 활성화 (필요한 경우)
-            'options': '-c search_path=public',
+            'sslmode': 'disable',
         },
     }
 }
 
-# 나머지 프로덕션 설정...
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# 보안 설정 (개발 서버용)
+SECURE_SSL_REDIRECT = False  # HTTP 허용
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
-# 로깅 설정...
+# 정적 파일 설정
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# 로깅 설정
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -69,4 +71,3 @@ LOGGING = {
         },
     },
 }
-
