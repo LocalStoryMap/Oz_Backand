@@ -99,10 +99,9 @@ jobs:
                 echo "🌐 서버 주소: http://223.130.152.69:8000"
                 echo "📊 서버 상태: 실행 중 (PID: $NEW_PID)"
                 echo "☁️  정적 파일: S3 Object Storage"
+                exit 0
             else
                 echo "❌ 서버 시작 실패!"
                 tail -n 20 /root/server.log || echo "로그 파일 없음"
-                exit 1
-            fi
                 exit 1
             fi
