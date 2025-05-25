@@ -21,51 +21,87 @@ jobs:
             echo "🚀 배포 시작..."
 
             # 1) 프로젝트 폴더 이동
-            cd /root/Oz_Backand
+            cd /root/Oz_Backand || exit 1
 
-            # 2) 현재 브랜치 강제 동기화
-            branch=$(git rev-parse --abbrev-ref HEAD)
-            echo "[DEBUG] Detected branch '$branch', syncing with origin"
+            # 2) Git 동기화
             git fetch --all
-            git reset --hard origin/$branch
+            git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+            echo "✅ Git 동기화 완료"
 
             # 3) 앱 디렉토리로 이동
-            if [ -d "LocalStoryMap" ]; then
-              cd LocalStoryMap
-            fi
+            cd LocalStoryMap || exit 1
 
-            # 4) Poetry 환경 설정
+            # 4) Poetry 버전 확인 및 환경 설정
             export PATH="/root/.local/bin:$PATH"
-            poetry env use python3.13 || true
+            echo "📦 현재 Poetry 버전: $(poetry --version)"
+            
+            # Poetry 환경 정리 (안전한 재시작)
+            poetry env remove --all 2>/dev/null || true
 
-            # 5) 의존성 설치
-            poetry install --no-interaction --no-ansi --no-root
+            # 5) 의존성 설치 (안전 모드)
+            poetry install --no-interaction --no-ansi || {
+                echo "❌ Poetry install failed. Retrying..."
+                poetry env remove --all || true
+                poetry install --no-interaction --no-ansi
+            }
 
-            # 6) .env 파일 작성
-            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
-            echo "DEBUG=False" >> .env
-            echo "ALLOWED_HOSTS=223.130.152.69,localhost,127.0.0.1" >> .env
+            # 6) 환경변수 파일 생성
+            cat > .env << EOF
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            DEBUG=False
+            ALLOWED_HOSTS=223.130.152.69,localhost,127.0.0.1
+            
+            # PostgreSQL 설정
+            NCP_DB_NAME=${{ secrets.NCP_DB_NAME }}
+            NCP_DB_USER=${{ secrets.NCP_DB_USER }}
+            NCP_DB_PASSWORD=${{ secrets.NCP_DB_PASSWORD }}
+            NCP_DB_HOST=${{ secrets.NCP_DB_HOST }}
+            NCP_DB_PORT=5432
+            EOF
+            echo "✅ 환경변수 설정 완료"
 
-            # 7) 이전 runserver 종료 (PID 파일 방식)
+            # 7) Django 설정 확인
+            poetry run python manage.py check --settings=config.settings.prod || {
+                echo "❌ Django check failed"
+                exit 1
+            }
+
+            # 8) 데이터베이스 마이그레이션
+            poetry run python manage.py migrate --settings=config.settings.prod || {
+                echo "❌ Migration failed"
+                exit 1
+            }
+            echo "✅ 마이그레이션 완료"
+
+            # 9) 기존 서버 종료
             if [ -f /root/runserver.pid ]; then
-              oldpid=$(cat /root/runserver.pid) || true
-              echo "🔪 Killing old runserver pid=$oldpid"
-              kill "$oldpid" 2>/dev/null || true
-              rm /root/runserver.pid
+                OLD_PID=$(cat /root/runserver.pid)
+                if kill -0 "$OLD_PID" 2>/dev/null; then
+                    echo "🔪 기존 서버 종료 (PID: $OLD_PID)"
+                    kill "$OLD_PID" || true
+                    sleep 3
+                fi
+                rm -f /root/runserver.pid
             fi
 
-            # 8) 서버 시작 (백그라운드 + PID 파일 기록)
-            nohup poetry run python manage.py runserver 0.0.0.0:8000 \
-              > /root/server.log 2>&1 &
-            echo $! > /root/runserver.pid
-            echo "🚀 Started runserver with PID=$(cat /root/runserver.pid)"
+            # 10) 새 서버 시작
+            echo "🚀 서버 시작..."
+            nohup poetry run python manage.py runserver 0.0.0.0:8000 --settings=config.settings.prod \
+                > /root/server.log 2>&1 &
+            
+            NEW_PID=$!
+            echo $NEW_PID > /root/runserver.pid
+            echo "✅ 새 서버 시작 (PID: $NEW_PID)"
 
-            # 9) 배포 성공 확인
-            sleep 5
-            if kill -0 "$(cat /root/runserver.pid)" 2>/dev/null; then
-             echo "✅ 배포 성공! http://223.130.152.69:8000"
+            # 11) 서버 시작 확인 (10초 대기)
+            sleep 10
+            if kill -0 "$NEW_PID" 2>/dev/null; then
+                echo "🎉 배포 성공!"
+                echo "🌐 서버 주소: http://223.130.152.69:8000"
+                echo "📊 서버 상태: 실행 중 (PID: $NEW_PID)"
             else
-              echo "❌ 서버 시작 실패"
-              tail -n 50 /root/server.log
-              exit 1
+                echo "❌ 서버 시작 실패!"
+                echo "📋 서버 로그 (마지막 20줄):"
+                tail -n 20 /root/server.log || echo "로그 파일 없음"
+                exit 1
             fi
