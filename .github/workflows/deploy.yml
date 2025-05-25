@@ -102,3 +102,7 @@ jobs:
             else
                 echo "❌ 서버 시작 실패!"
                 tail -n 20 /root/server.log || echo "로그 파일 없음"
+                exit 1
+            fi
+                exit 1
+            fi
