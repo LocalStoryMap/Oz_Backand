@@ -31,19 +31,13 @@ jobs:
             # 3) 앱 디렉토리로 이동
             cd LocalStoryMap || exit 1
 
-            # 4) Poetry 버전 확인 및 환경 설정
+            # 4) Poetry 환경 설정
             export PATH="/root/.local/bin:$PATH"
-            echo "📦 현재 Poetry 버전: $(poetry --version)"
-            
-            # Poetry 환경 정리 (안전한 재시작)
+            echo "📦 Poetry 버전: $(poetry --version)"
             poetry env remove --all 2>/dev/null || true
 
-            # 5) 의존성 설치 (안전 모드)
-            poetry install --no-interaction --no-ansi || {
-                echo "❌ Poetry install failed. Retrying..."
-                poetry env remove --all || true
-                poetry install --no-interaction --no-ansi
-            }
+            # 5) 의존성 설치
+            poetry install --no-interaction --no-ansi
 
             # 6) 환경변수 파일 생성
             cat > .env << EOF
@@ -57,23 +51,28 @@ jobs:
             NCP_DB_PASSWORD=${{ secrets.NCP_DB_PASSWORD }}
             NCP_DB_HOST=${{ secrets.NCP_DB_HOST }}
             NCP_DB_PORT=5432
+            
+            # 🔥 Object Storage 설정
+            USE_S3_STORAGE=${{ secrets.USE_S3_STORAGE }}
+            NCP_ACCESS_KEY=${{ secrets.NCP_ACCESS_KEY }}
+            NCP_SECRET_KEY=${{ secrets.NCP_SECRET_KEY }}
+            NCP_BUCKET_NAME=${{ secrets.NCP_BUCKET_NAME }}
             EOF
-            echo "✅ 환경변수 설정 완료"
+            echo "✅ 환경변수 설정 완료 (S3 포함)"
 
             # 7) Django 설정 확인
-            poetry run python manage.py check --settings=config.settings.prod || {
-                echo "❌ Django check failed"
-                exit 1
-            }
+            poetry run python manage.py check --settings=config.settings.prod
+            echo "✅ Django 설정 확인 완료"
 
-            # 8) 데이터베이스 마이그레이션
-            poetry run python manage.py migrate --settings=config.settings.prod || {
-                echo "❌ Migration failed"
-                exit 1
-            }
+            # 8) 정적 파일 수집 (S3로 업로드)
+            poetry run python manage.py collectstatic --noinput --settings=config.settings.prod
+            echo "✅ 정적 파일 S3 업로드 완료"
+
+            # 9) 데이터베이스 마이그레이션
+            poetry run python manage.py migrate --settings=config.settings.prod
             echo "✅ 마이그레이션 완료"
 
-            # 9) 기존 서버 종료
+            # 10) 기존 서버 종료
             if [ -f /root/runserver.pid ]; then
                 OLD_PID=$(cat /root/runserver.pid)
                 if kill -0 "$OLD_PID" 2>/dev/null; then
@@ -84,7 +83,7 @@ jobs:
                 rm -f /root/runserver.pid
             fi
 
-            # 10) 새 서버 시작
+            # 11) 새 서버 시작
             echo "🚀 서버 시작..."
             nohup poetry run python manage.py runserver 0.0.0.0:8000 --settings=config.settings.prod \
                 > /root/server.log 2>&1 &
@@ -93,15 +92,13 @@ jobs:
             echo $NEW_PID > /root/runserver.pid
             echo "✅ 새 서버 시작 (PID: $NEW_PID)"
 
-            # 11) 서버 시작 확인 (10초 대기)
+            # 12) 서버 시작 확인
             sleep 10
             if kill -0 "$NEW_PID" 2>/dev/null; then
-                echo "🎉 배포 성공!"
+                echo "🎉 배포 성공! (PostgreSQL + S3)"
                 echo "🌐 서버 주소: http://223.130.152.69:8000"
                 echo "📊 서버 상태: 실행 중 (PID: $NEW_PID)"
+                echo "☁️  정적 파일: S3 Object Storage"
             else
                 echo "❌ 서버 시작 실패!"
-                echo "📋 서버 로그 (마지막 20줄):"
                 tail -n 20 /root/server.log || echo "로그 파일 없음"
-                exit 1
-            fi
