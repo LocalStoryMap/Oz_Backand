@@ -38,7 +38,7 @@ DATABASES = {
         'HOST': os.getenv('NCP_DB_HOST'),
         'PORT': os.getenv('NCP_DB_PORT', '5432'),
         'OPTIONS': {
-            'sslmode': 'require',
+            'sslmode': 'disable',
         },
         'CONN_MAX_AGE': 60,
     }
