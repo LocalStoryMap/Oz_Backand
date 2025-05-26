@@ -8,10 +8,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # Checkout 코드를 먼저 가져옵니다
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # SSH를 통해 서버에 배포 스크립트 실행
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          BRANCH: ${{ github.ref_name }}
         with:
           host: 223.130.152.69
           username: root
@@ -20,19 +23,21 @@ jobs:
             set -e
             echo "🚀 배포 시작..."
 
-            # 1) 프로젝트 동기화
+            # 1) 프로젝트 폴더로 이동 및 Git 동기화
             cd /root/Oz_Backand/LocalStoryMap
             git fetch --all
-            git reset --hard origin/${BRANCH}
-            echo "✅ Git 동기화 완료"
+            # 현재 푸시된 브랜치 이름 추출 (refs/heads/* → *)
+            BRANCH=${GITHUB_REF#refs/heads/}
+            echo "✅ Git 동기화: origin/$BRANCH"
+            git reset --hard origin/$BRANCH
 
-            # 2) 의존성 설치 & 마이그레이션 & 정적 파일
+            # 2) 의존성 설치 & 마이그레이션 & 정적 파일 수집
             export PATH="/root/.cache/pypoetry/virtualenvs/localstorymap-JxpcprW_-py3.13/bin:$PATH"
             poetry install --no-interaction --no-root
             poetry run python manage.py migrate --noinput --settings=config.settings.prod
             poetry run python manage.py collectstatic --noinput --settings=config.settings.prod
 
-            # 3) systemd 에 서비스 재시작 맡기기
+            # 3) systemd에 서비스 재시작 맡기기
             echo "🚀 systemd 서비스 재시작: localstorymap"
             sudo systemctl daemon-reload
             sudo systemctl restart localstorymap
