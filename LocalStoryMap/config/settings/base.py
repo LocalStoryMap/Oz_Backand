@@ -12,6 +12,7 @@ if env_path.exists():
 SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret-key-if-not-set')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
+# ─── 데이터 베이스 설정 ────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',

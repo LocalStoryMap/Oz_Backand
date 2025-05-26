@@ -5,7 +5,7 @@ try:
 except ImportError:
     S3Boto3Storage = None
 
-# 로그/정적 파일 디렉토리 설정
+# ---로그/정적 파일 디렉토리 설정--------------------------------
 logs_dir = BASE_DIR / 'logs'
 if not logs_dir.exists():
     logs_dir.mkdir(exist_ok=True)
@@ -14,7 +14,7 @@ static_dir = BASE_DIR / 'static'
 if not static_dir.exists():
     static_dir.mkdir(exist_ok=True)
 
-# 프로덕션 설정
+# ---프로덕션 설정---------------------------------------------
 DEBUG = False
 ROOT_URLCONF = 'config.urls.urls_prod'
 
@@ -27,7 +27,7 @@ ALLOWED_HOSTS = [
     'www.yourdomain.com',
 ]
 
-# PostgreSQL 설정
+# ---PostgreSQL 설정------------------------------------------
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -42,17 +42,17 @@ DATABASES = {
     }
 }
 
-# 보안 설정
+# ---보안 설정--------------------------------------------------
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-# Storages 앱 추가
+# ---Storages 앱 추가-------------------------------------------
 INSTALLED_APPS += [
     'storages',
 ]
 
-# 🔥 강제 S3 활성화 (조건문 제거)
+# ---강제 S3 활성화 (조건문 제거)---------------------------------------------------------------------
 USE_S3_STORAGE = os.getenv('USE_S3_STORAGE', 'False').lower() == 'true'
 
 print(f"🔍 S3 설정 디버그: USE_S3_STORAGE={USE_S3_STORAGE}, 환경변수={os.getenv('USE_S3_STORAGE')}")
@@ -93,7 +93,7 @@ else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
 
-# 로깅 설정
+# ---로깅 설정-------------------------------------------------------------------------------
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
