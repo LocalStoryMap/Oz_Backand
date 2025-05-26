@@ -8,11 +8,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1) 워크스페이스에 코드 체크아웃
+      # 1) Checkout the code so that github.ref is set
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2) SSH로 서버 배포 스크립트 실행
+      # 2) SSH to server and run deploy script
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -23,31 +23,34 @@ jobs:
             set -e
             echo "🚀 배포 시작..."
 
-            # 2-a) Runner에서 전달된 Git ref 를 직접 사용
-            #    github.ref 은 "refs/heads/dev" 같은 형태입니다.
+            # ─── 2-a) 브랜치 추출 ────────────────────────────────
             REF="${{ github.ref }}"
             BRANCH="${REF#refs/heads/}"
             echo "✅ 배포 브랜치: origin/$BRANCH"
 
-            # 2-b) 프로젝트 동기화
+            # ─── 2-b) 프로젝트 동기화 ───────────────────────────
             cd /root/Oz_Backand/LocalStoryMap
             git fetch --all
             git reset --hard origin/$BRANCH
             echo "✅ Git 동기화 완료"
 
-            # 2-c) 의존성 설치 · 마이그레이션 · static
-            export PATH="/root/.cache/pypoetry/virtualenvs/localstorymap-JxpcprW_-py3.13/bin:$PATH"
-            poetry install --no-interaction --no-root
-            poetry run python manage.py migrate --noinput --settings=config.settings.prod
-            poetry run python manage.py collectstatic --noinput --settings=config.settings.prod
+            # ─── 2-c) venv 전용 Poetry 설치 & 경로 지정 ──────────
+            VENV_BIN="/root/.cache/pypoetry/virtualenvs/localstorymap-JxpcprW_-py3.13/bin"
+            "$VENV_BIN/python" -m pip install --upgrade poetry
+            echo "📦 Poetry (venv) 버전: $($VENV_BIN/poetry --version)"
+
+            # ─── 2-d) 의존성 설치 · 마이그레이션 · 정적 파일 수집 ─
+            "$VENV_BIN/poetry" install --no-interaction --no-root
+            "$VENV_BIN/poetry" run python manage.py migrate --noinput --settings=config.settings.prod
+            "$VENV_BIN/poetry" run python manage.py collectstatic --noinput --settings=config.settings.prod
             echo "✅ 마이그레이션 및 정적 파일 처리 완료"
 
-            # 2-d) systemd 서비스 재시작
+            # ─── 2-e) systemd 서비스 재시작 ─────────────────────
             echo "🚀 systemd 서비스 재시작: localstorymap"
             sudo systemctl daemon-reload
             sudo systemctl restart localstorymap
 
-            # 2-e) 배포 성공 확인
+            # ─── 2-f) 배포 성공 확인 ────────────────────────────
             sleep 5
             if systemctl is-active --quiet localstorymap; then
               echo "🎉 서비스 정상 실행 중."
