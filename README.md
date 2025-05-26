@@ -354,7 +354,7 @@ poetry run python manage.py collectstatic --clear --settings=config.settings.dev
 - [x] REST Framework 기본 설정
 - [x] 토큰 인증 시스템 준비
 - [x] 배포 환경 최종 테스트
-- [ ] 사용자 인증 시스템
+- [x] 사용자 인증 시스템
 - [ ] 지도 API 연동
 - [ ] 스토리 CRUD API
 - [ ] 프론트엔드 개발
