@@ -15,8 +15,8 @@ ROOT_URLCONF = 'config.urls.urls_prod'
 
 # ---CORS 설정 (프로덕션용)---------------------------------------
 CORS_ALLOWED_ORIGINS = [
-    "https://yourdomain.com",      # ✅ 실제 도메인으로 변경
-    "https://www.yourdomain.com",
+    "https://localstorymap.com",
+    "https://www.localstorymap.com",
 ]
 
 # ---도메인 설정-------------------------------------------------
@@ -24,8 +24,8 @@ ALLOWED_HOSTS = [
     '223.130.152.69',
     'localhost',
     '127.0.0.1',
-    'yourdomain.com',
-    'www.yourdomain.com',
+    'localstorymap.com',
+    'www.localstorymap.com',
 ]
 
 # ---PostgreSQL 설정---------------------------------------------
