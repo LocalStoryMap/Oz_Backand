@@ -20,88 +20,30 @@ jobs:
             set -e
             echo "🚀 배포 시작..."
 
-            # 1) 프로젝트 폴더 이동
-            cd /root/Oz_Backand || exit 1
-
-            # 2) Git 동기화
+            # 1) 프로젝트 동기화
+            cd /root/Oz_Backand/LocalStoryMap
             git fetch --all
-            git reset --hard origin/$(git rev-parse --abbrev-ref HEAD)
+            git reset --hard origin/${BRANCH}
             echo "✅ Git 동기화 완료"
 
-            # 3) 앱 디렉토리로 이동
-            cd LocalStoryMap || exit 1
-
-            # 4) Poetry 환경 설정
-            export PATH="/root/.local/bin:$PATH"
-            echo "📦 Poetry 버전: $(poetry --version)"
-            poetry env remove --all 2>/dev/null || true
-
-            # 5) 의존성 설치
-            poetry install --no-interaction --no-ansi
-
-            # 6) 환경변수 파일 생성
-            cat > .env << EOF
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
-            DEBUG=False
-            ALLOWED_HOSTS=223.130.152.69,localhost,127.0.0.1
-            
-            # PostgreSQL 설정
-            NCP_DB_NAME=${{ secrets.NCP_DB_NAME }}
-            NCP_DB_USER=${{ secrets.NCP_DB_USER }}
-            NCP_DB_PASSWORD=${{ secrets.NCP_DB_PASSWORD }}
-            NCP_DB_HOST=${{ secrets.NCP_DB_HOST }}
-            NCP_DB_PORT=5432
-            
-            # 🔥 Object Storage 설정
-            USE_S3_STORAGE=${{ secrets.USE_S3_STORAGE }}
-            NCP_ACCESS_KEY=${{ secrets.NCP_ACCESS_KEY }}
-            NCP_SECRET_KEY=${{ secrets.NCP_SECRET_KEY }}
-            NCP_BUCKET_NAME=${{ secrets.NCP_BUCKET_NAME }}
-            EOF
-            echo "✅ 환경변수 설정 완료 (S3 포함)"
-
-            # 7) Django 설정 확인
-            poetry run python manage.py check --settings=config.settings.prod
-            echo "✅ Django 설정 확인 완료"
-
-            # 8) 정적 파일 수집 (S3로 업로드)
+            # 2) 의존성 설치 & 마이그레이션 & 정적 파일
+            export PATH="/root/.cache/pypoetry/virtualenvs/localstorymap-JxpcprW_-py3.13/bin:$PATH"
+            poetry install --no-interaction --no-root
+            poetry run python manage.py migrate --noinput --settings=config.settings.prod
             poetry run python manage.py collectstatic --noinput --settings=config.settings.prod
-            echo "✅ 정적 파일 S3 업로드 완료"
 
-            # 9) 데이터베이스 마이그레이션
-            poetry run python manage.py migrate --settings=config.settings.prod
-            echo "✅ 마이그레이션 완료"
+            # 3) systemd 에 서비스 재시작 맡기기
+            echo "🚀 systemd 서비스 재시작: localstorymap"
+            sudo systemctl daemon-reload
+            sudo systemctl restart localstorymap
 
-            # 10) 기존 서버 종료
-            if [ -f /root/runserver.pid ]; then
-                OLD_PID=$(cat /root/runserver.pid)
-                if kill -0 "$OLD_PID" 2>/dev/null; then
-                    echo "🔪 기존 서버 종료 (PID: $OLD_PID)"
-                    kill "$OLD_PID" || true
-                    sleep 3
-                fi
-                rm -f /root/runserver.pid
-            fi
-
-            # 11) 새 서버 시작
-            echo "🚀 서버 시작..."
-            nohup poetry run python manage.py runserver 0.0.0.0:8000 --settings=config.settings.prod \
-                > /root/server.log 2>&1 &
-            
-            NEW_PID=$!
-            echo $NEW_PID > /root/runserver.pid
-            echo "✅ 새 서버 시작 (PID: $NEW_PID)"
-
-            # 12) 서버 시작 확인
-            sleep 10
-            if kill -0 "$NEW_PID" 2>/dev/null; then
-                echo "🎉 배포 성공! (PostgreSQL + S3)"
-                echo "🌐 서버 주소: http://223.130.152.69:8000"
-                echo "📊 서버 상태: 실행 중 (PID: $NEW_PID)"
-                echo "☁️  정적 파일: S3 Object Storage"
+            # 4) 배포 성공 확인
+            sleep 5
+            if systemctl is-active --quiet localstorymap; then
+                echo "🎉 서비스 정상 실행 중."
                 exit 0
             else
-                echo "❌ 서버 시작 실패!"
-                tail -n 20 /root/server.log || echo "로그 파일 없음"
+                echo "❌ 서비스 재시작 실패!"
+                sudo journalctl -u localstorymap -n 50
                 exit 1
             fi
