@@ -353,7 +353,7 @@ poetry run python manage.py collectstatic --clear --settings=config.settings.dev
 - [x] 로깅 시스템 구축
 - [x] REST Framework 기본 설정
 - [x] 토큰 인증 시스템 준비
-- [⏳] 배포 환경 최종 테스트
+- [x] 배포 환경 최종 테스트
 - [ ] 사용자 인증 시스템
 - [ ] 지도 API 연동
 - [ ] 스토리 CRUD API
@@ -366,9 +366,9 @@ poetry run python manage.py collectstatic --clear --settings=config.settings.dev
 ## 🎯 다음 개발 목표
 
 ### Phase 1: 인프라 완성
-- [⏳] PostgreSQL 연결 안정화
-- [ ] 도메인 적용 및 HTTPS 설정
-- [ ] Gunicorn + Nginx 프로덕션 서버 구축
+- [x] PostgreSQL 연결 안정화
+- [x] 도메인 적용 및 HTTPS 설정
+- [x] Gunicorn + Nginx 프로덕션 서버 구축
 
 ### Phase 2: 기초 기능 개발
 - [ ] User 모델 및 인증 시스템
