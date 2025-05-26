@@ -1,10 +1,4 @@
 from .urls_base import urlpatterns as base_urlpatterns
-from django.urls import URLPattern
 
-urlpatterns = [
-    url for url in base_urlpatterns
-    if not (
-        isinstance(url, URLPattern) and url.name in ['schema', 'swagger-ui', 'redoc']
-    )
-]
-
+# 프로덕션에서는 base와 동일한 URL 구성 사용
+urlpatterns = base_urlpatterns

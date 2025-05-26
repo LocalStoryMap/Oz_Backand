@@ -1,11 +1,6 @@
 from .base import *
 
-try:
-    from storages.backends.s3boto3 import S3Boto3Storage
-except ImportError:
-    S3Boto3Storage = None
-
-# ---로그/정적 파일 디렉토리 설정--------------------------------
+# ---로그/정적 파일 디렉토리 설정----------------------------------
 logs_dir = BASE_DIR / 'logs'
 if not logs_dir.exists():
     logs_dir.mkdir(exist_ok=True)
@@ -14,11 +9,17 @@ static_dir = BASE_DIR / 'static'
 if not static_dir.exists():
     static_dir.mkdir(exist_ok=True)
 
-# ---프로덕션 설정---------------------------------------------
+# ---프로덕션 설정-----------------------------------------------
 DEBUG = False
 ROOT_URLCONF = 'config.urls.urls_prod'
 
-# 도메인 설정
+# ---CORS 설정 (프로덕션용)---------------------------------------
+CORS_ALLOWED_ORIGINS = [
+    "https://yourdomain.com",      # ✅ 실제 도메인으로 변경
+    "https://www.yourdomain.com",
+]
+
+# ---도메인 설정-------------------------------------------------
 ALLOWED_HOSTS = [
     '223.130.152.69',
     'localhost',
@@ -27,7 +28,7 @@ ALLOWED_HOSTS = [
     'www.yourdomain.com',
 ]
 
-# ---PostgreSQL 설정------------------------------------------
+# ---PostgreSQL 설정---------------------------------------------
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -37,63 +38,39 @@ DATABASES = {
         'HOST': os.getenv('NCP_DB_HOST'),
         'PORT': os.getenv('NCP_DB_PORT', '5432'),
         'OPTIONS': {
-            'sslmode': 'disable',
+            'sslmode': 'require',
         },
+        'CONN_MAX_AGE': 60,
     }
 }
 
-# ---보안 설정--------------------------------------------------
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+# ---보안 설정------------------------------------------------------------
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# ---Storages 앱 추가-------------------------------------------
-INSTALLED_APPS += [
-    'storages',
-]
+# 추가 보안 설정
+SECURE_HSTS_SECONDS = 31536000  # 1년 (HTTPS 강제)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_FRAME_DENY = True  # 클릭재킹 방지
+X_FRAME_OPTIONS = 'DENY'
 
-# ---강제 S3 활성화 (조건문 제거)---------------------------------------------------------------------
-USE_S3_STORAGE = os.getenv('USE_S3_STORAGE', 'False').lower() == 'true'
+# 성능 최적화
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 
-print(f"🔍 S3 설정 디버그: USE_S3_STORAGE={USE_S3_STORAGE}, 환경변수={os.getenv('USE_S3_STORAGE')}")
-
-if USE_S3_STORAGE and S3Boto3Storage:
-    print("🔥 S3 스토리지 활성화!")
-
-    # S3 호환 Object Storage 설정
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-    # 네이버 클라우드 Object Storage 설정
-    AWS_S3_ENDPOINT_URL = 'https://kr.object.ncloudstorage.com'
-    AWS_ACCESS_KEY_ID = os.getenv('NCP_ACCESS_KEY')
-    AWS_SECRET_ACCESS_KEY = os.getenv('NCP_SECRET_KEY')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('NCP_BUCKET_NAME')
-    AWS_S3_REGION_NAME = 'kr-standard'
-
-    # 추가 S3 설정
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_OBJECT_PARAMETERS = {
-        'CacheControl': 'max-age=86400',
+# ---Redis 캐시 설정 (성능 향상)----------------------------------------------
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
     }
-    AWS_QUERYSTRING_AUTH = False
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com'
+}
 
-    # URL 설정
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-
-    print(f"✅ S3 URL 설정: STATIC_URL={STATIC_URL}")
-
-else:
-    print("⚠️ S3 비활성화 - 로컬 스토리지 사용")
-    # 로컬 파일 시스템 사용
-    STATIC_URL = '/static/'
-    STATIC_ROOT = BASE_DIR / 'staticfiles'
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
-
-# ---로깅 설정-------------------------------------------------------------------------------
+# ---로깅 설정--------------------------------------------------------------
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
