@@ -13,7 +13,20 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret-key-if-not-set')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ROOT_URLCONF = 'config.urls'
 
-# ─── 데이터 베이스 설정 ────────────────────────────────────
+# ─── S3(Object Storage) 환경변수 매핑 ───────────────────────
+AWS_ACCESS_KEY_ID = os.getenv('NCP_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = os.getenv('NCP_SECRET_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('NCP_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL', 'https://kr.object.ncloudstorage.com')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'kr-standard')
+AWS_S3_ADDRESSING_STYLE = 'path'
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com" if AWS_STORAGE_BUCKET_NAME else None
+AWS_LOCATION = 'static/'
+AWS_MEDIA_LOCATION = 'media/'
+
+# ─── 데이터베이스 설정 ─────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -53,7 +66,7 @@ MIDDLEWARE = [
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # 템플릿 디렉토리 추가
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -70,7 +83,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # ─── CORS 설정 (React 연동용) ──────────────────────────────
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React 개발서버
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 CORS_ALLOW_CREDENTIALS = True
@@ -90,64 +103,25 @@ USE_I18N = True
 USE_TZ = True
 
 # ─── 스토리지 설정 (환경변수 기반) ────────────────────────
-try:
-    from storages.backends.s3boto3 import S3Boto3Storage
-except ImportError:
-    S3Boto3Storage = None
-
 USE_S3_STORAGE = os.getenv('USE_S3_STORAGE', 'False').lower() == 'true'
 
-if USE_S3_STORAGE and S3Boto3Storage:
-    print("🚀 NCP Object Storage 사용 중...")
-
-    # ✅  1. 새로 추가할 STORAGES 설정
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-        },
-        "staticfiles": {
-            "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
-        },
-    }
-
-    # ✅  2. 기존 설정 수정 (S3StaticStorage로 변경)
+if USE_S3_STORAGE and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME:
+    # 파일 및 정적 파일 스토리지 백엔드
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-    # 네이버 클라우드 Object Storage 설정
-    AWS_S3_ENDPOINT_URL = 'https://kr.object.ncloudstorage.com'
-    AWS_ACCESS_KEY_ID = os.getenv('NCP_ACCESS_KEY')
-    AWS_SECRET_ACCESS_KEY = os.getenv('NCP_SECRET_KEY')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('NCP_BUCKET_NAME')
-    AWS_S3_REGION_NAME = 'kr-standard'
-    AWS_DEFAULT_ACL = None
-    AWS_QUERYSTRING_AUTH = False
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com'
+    # S3 URL 설정
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}'
 
-    # ✅ 누락된 LOCATION 설정 추가
-    AWS_LOCATION = 'static/'
-    AWS_MEDIA_LOCATION = 'media/'
-
+    # 로컬 정적 디렉토리는 개발용 유지
     STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-    # URL 설정
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-
-    # 정적 파일 디렉토리는 유지 (개발용)
-    STATICFILES_DIRS = [
-        BASE_DIR / 'static',
-    ]
-
+    STATICFILES_DIRS = [BASE_DIR / 'static']
 else:
-    print("📁 로컬 파일 시스템 사용 중...")
-
-    # 로컬 파일 시스템 사용 (기본값)
+    # 로컬 파일 시스템 사용
     STATIC_URL = '/static/'
     STATIC_ROOT = BASE_DIR / 'staticfiles'
-    STATICFILES_DIRS = [
-        BASE_DIR / 'static',
-    ]
+    STATICFILES_DIRS = [BASE_DIR / 'static']
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -179,10 +153,10 @@ CACHES = {
     }
 }
 
-# ─── 이메일 설정 (개발용 기본값) ────────────────────────────
+# ─── 이메일 설정 (개발용) ─────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# ─── 로깅 기본 설정 ────────────────────────────────────────
+# ─── 로깅 설정 ────────────────────────────────────────────
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
