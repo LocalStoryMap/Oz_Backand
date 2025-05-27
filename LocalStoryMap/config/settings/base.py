@@ -100,9 +100,19 @@ USE_S3_STORAGE = os.getenv('USE_S3_STORAGE', 'False').lower() == 'true'
 if USE_S3_STORAGE and S3Boto3Storage:
     print("🚀 NCP Object Storage 사용 중...")
 
-    # NCP Object Storage 설정
+    # ✅  1. 새로 추가할 STORAGES 설정
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        },
+    }
+
+    # ✅  2. 기존 설정 수정 (S3StaticStorage로 변경)
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
 
     # 네이버 클라우드 Object Storage 설정
     AWS_S3_ENDPOINT_URL = 'https://kr.object.ncloudstorage.com'
@@ -110,7 +120,7 @@ if USE_S3_STORAGE and S3Boto3Storage:
     AWS_SECRET_ACCESS_KEY = os.getenv('NCP_SECRET_KEY')
     AWS_STORAGE_BUCKET_NAME = os.getenv('NCP_BUCKET_NAME')
     AWS_S3_REGION_NAME = 'kr-standard'
-    AWS_DEFAULT_ACL = 'public-read'
+    AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com'
 
@@ -118,8 +128,7 @@ if USE_S3_STORAGE and S3Boto3Storage:
     AWS_LOCATION = 'static/'
     AWS_MEDIA_LOCATION = 'media/'
 
-    # S3 사용 시 STATIC_ROOT 제거 (충돌 방지)
-    # STATIC_ROOT은 로컬 파일 시스템용이므로 S3 사용 시 불필요
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
 
     # URL 설정
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
