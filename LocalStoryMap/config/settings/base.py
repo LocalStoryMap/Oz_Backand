@@ -120,13 +120,30 @@ if USE_S3_STORAGE and S3Boto3Storage:
     AWS_QUERYSTRING_AUTH = False
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com'
 
+    AWS_LOCATION = 'static/'
+    AWS_MEDIA_LOCATION = 'media/'
+
+    # S3 사용 시 STATIC_ROOT 제거 (충돌 방지)
+    # STATIC_ROOT은 로컬 파일 시스템용이므로 S3 사용 시 불필요
+
     # URL 설정
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
     MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+    # 정적 파일 디렉토리는 유지 (개발용)
+    STATICFILES_DIRS = [
+        BASE_DIR / 'static',
+    ]
+
 else:
+    print("📁 로컬 파일 시스템 사용 중...")
+
     # 로컬 파일 시스템 사용 (기본값)
     STATIC_URL = '/static/'
     STATIC_ROOT = BASE_DIR / 'staticfiles'
+    STATICFILES_DIRS = [
+        BASE_DIR / 'static',
+    ]
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
 
