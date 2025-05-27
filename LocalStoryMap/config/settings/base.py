@@ -70,11 +70,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # ─── CORS 설정 (React 연동용) ──────────────────────────────
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",    # React 개발서버
+    "http://localhost:3000",  # React 개발서버
     "http://127.0.0.1:3000",
 ]
 CORS_ALLOW_CREDENTIALS = True
-
 
 # ─── 비밀번호 검증 설정 ────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
@@ -90,13 +89,6 @@ TIME_ZONE = 'Asia/Seoul'
 USE_I18N = True
 USE_TZ = True
 
-# ─── 정적 파일 설정 ────────────────────────────────────────
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # 프로덕션용 정적 파일 수집 경로
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # 개발용 정적 파일 디렉토리
-]
-
 # ─── 스토리지 설정 (환경변수 기반) ────────────────────────
 try:
     from storages.backends.s3boto3 import S3Boto3Storage
@@ -106,7 +98,9 @@ except ImportError:
 USE_S3_STORAGE = os.getenv('USE_S3_STORAGE', 'False').lower() == 'true'
 
 if USE_S3_STORAGE and S3Boto3Storage:
+    print("🚀 NCP Object Storage 사용 중...")
 
+    # NCP Object Storage 설정
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
@@ -120,6 +114,7 @@ if USE_S3_STORAGE and S3Boto3Storage:
     AWS_QUERYSTRING_AUTH = False
     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com'
 
+    # ✅ 누락된 LOCATION 설정 추가
     AWS_LOCATION = 'static/'
     AWS_MEDIA_LOCATION = 'media/'
 
