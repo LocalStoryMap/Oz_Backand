@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # 1) Checkout the code so that gitBub.ref is set
+      # 1) Checkout the code so that github.ref is set
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -28,8 +28,8 @@ jobs:
       - name: Create Sentry Release
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: localstorymap      # Sentry 조직 슬러그
-          SENTRY_PROJECT: oz-backend      # Sentry 프로젝트 슬러그
+          SENTRY_ORG: localstorymap
+          SENTRY_PROJECT: oz-backend
         run: |
           COMMIT_SHA=$(git rev-parse HEAD)
           sentry-cli releases new localstorymap@${COMMIT_SHA}
@@ -84,9 +84,3 @@ jobs:
               sudo journalctl -u localstorymap -n 50
               exit 1
             fi
-
-
-
-
-
-
