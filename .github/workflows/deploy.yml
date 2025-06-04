@@ -53,7 +53,7 @@ jobs:
             echo "✅ 배포 브랜치: origin/$BRANCH"
 
             # ─── 2-b) 프로젝트 동기화 ───────────────────────────
-            cd /root/Oz_Backend/LocalStoryMap
+            cd /root/Oz_Backand/LocalStoryMap
             git fetch --all
             git reset --hard origin/$BRANCH
             echo "✅ Git 동기화 완료"
