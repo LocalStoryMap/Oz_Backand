@@ -1,6 +1,5 @@
-import os
 from pathlib import Path
-
+import os
 from dotenv import load_dotenv
 
 # ─── .env 로드 ───────────────────────────────────────────
@@ -26,9 +25,12 @@ if env_path.exists():
         )
 
 # ─── 환경변수 기반 설정 ────────────────────────────────────
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-if-not-set")
-DEBUG = os.getenv("DEBUG", "False") == "True"
-ROOT_URLCONF = "config.urls"
+SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-secret-key-if-not-set')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+ROOT_URLCONF = 'config.urls'
+# 카카오 로그인 관련 환경 변수
+KAKAO_REST_API_KEY = os.getenv('KAKAO_REST_API_KEY')
+KAKAO_REDIRECT_URI = os.getenv('KAKAO_REDIRECT_URI')
 
 # ─── S3(Object Storage) 환경변수 매핑 ───────────────────────
 AWS_ACCESS_KEY_ID = os.getenv("NCP_ACCESS_KEY")
@@ -59,25 +61,21 @@ DATABASES = {
 
 # ─── 앱 등록 ─────────────────────────────────────────────
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'apps.users',
     # Third party apps
-    "rest_framework",
-    "rest_framework.authtoken",
-    "corsheaders",
-    "storages",
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders',
+    'storages',
+    'drf_yasg',
 ]
-
-# ─── DEBUG 모드에서만 Debug Toolbar를 등록 ───────────────────
-if DEBUG:
-    INSTALLED_APPS += [
-        "debug_toolbar",
-    ]
-
+AUTH_USER_MODEL = 'apps_users.User'
 # ─── 미들웨어 설정 ────────────────────────────────────────
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
