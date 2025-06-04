@@ -190,7 +190,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
-        "django_rest_framework.renderers.BrowsableAPIRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }
 
