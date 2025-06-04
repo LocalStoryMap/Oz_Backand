@@ -1,7 +1,9 @@
 import os
 import uuid
+
 import requests
 from django.conf import settings
+
 
 class ClovaClient:
     """
@@ -11,9 +13,15 @@ class ClovaClient:
     def __init__(self):
         # settings.py에서 불러오기
         self.api_key = settings.CLOVA_API_KEY
-        self.base_url = settings.CLOVA_CHAT_COMPLETIONS_URL  # 형식: https://.../chat-completions/{SKILL_ID}
+        self.base_url = (
+            settings.CLOVA_CHAT_COMPLETIONS_URL
+        )  # 형식: https://.../chat-completions/{SKILL_ID}
 
-        if not self.api_key or 'testapp' not in self.base_url and 'service' not in self.base_url:
+        if (
+            not self.api_key
+            or "testapp" not in self.base_url
+            and "service" not in self.base_url
+        ):
             raise RuntimeError("Clova Studio API Key 또는 Base URL 설정을 확인하세요.")
 
     def _default_headers(self):
@@ -26,10 +34,12 @@ class ClovaClient:
         return {
             "Authorization": f"Bearer {self.api_key}",
             "X-NCP-CLOVASTUDIO-REQUEST-ID": str(uuid.uuid4()),
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
-    def summarize_text(self, text: str, max_tokens: int = 512, temperature: float = 0.5):
+    def summarize_text(
+        self, text: str, max_tokens: int = 512, temperature: float = 0.5
+    ):
         """
         주어진 긴 텍스트(text)를 간결하게 요약해서 반환.
         Clova Chat-completions API를 '요약 봇' 역할로 호출.
@@ -44,23 +54,20 @@ class ClovaClient:
                     "content": (
                         "너는 여행지 상세 내용을 한국어로 간결하게 요약해 주는 요약 봇이다. "
                         "중요한 정보는 놓치지 않으면서 최대한 짧고 쉽게 요약해라."
-                    )
+                    ),
                 },
-                {
-                    "role": "user",
-                    "content": text
-                }
+                {"role": "user", "content": text},
             ],
             # 옵션: max_tokens, temperature 등은 필요에 따라 조절 가능
             "max_tokens": max_tokens,
-            "temperature": temperature
+            "temperature": temperature,
         }
 
         response = requests.post(
             url=self.base_url,
             headers=self._default_headers(),
             json=payload,
-            timeout=30  # 타임아웃 적절히 설정
+            timeout=30,  # 타임아웃 적절히 설정
         )
         response.raise_for_status()
         data = response.json()
@@ -101,14 +108,11 @@ class ClovaClient:
             "model": "HCX-003",
             "messages": messages,
             "max_tokens": max_tokens,
-            "temperature": temperature
+            "temperature": temperature,
         }
 
         response = requests.post(
-            url=self.base_url,
-            headers=self._default_headers(),
-            json=payload,
-            timeout=30
+            url=self.base_url, headers=self._default_headers(), json=payload, timeout=30
         )
         response.raise_for_status()
         data = response.json()

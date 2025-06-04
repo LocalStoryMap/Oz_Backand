@@ -1,11 +1,12 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .utils.clova_client import ClovaClient
-from .serializers import SummarizeRequestSerializer, ChatRequestSerializer
 from .models import Location
+from .serializers import ChatRequestSerializer, SummarizeRequestSerializer
+from .utils.clova_client import ClovaClient
+
 
 class SummarizeAPIView(APIView):
     """
@@ -45,7 +46,7 @@ class SummarizeAPIView(APIView):
             # Clova 호출 에러 처리
             return Response(
                 {"error": f"Clova 요약 API 호출 실패: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         # 3) (선택) DB 캐시에 저장하려면 여기에 로직 추가
@@ -86,8 +87,7 @@ class ChatAPIView(APIView):
         except Exception as e:
             return Response(
                 {"error": f"Clova Chat API 호출 실패: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         return Response({"reply": reply}, status=status.HTTP_200_OK)
-

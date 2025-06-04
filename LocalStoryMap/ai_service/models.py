@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Location(models.Model):
     name = models.CharField(max_length=200)
     # 여행지 상세 설명 원문. 이미 백엔드 팀원이 채워서 DB에 저장되어 있음.

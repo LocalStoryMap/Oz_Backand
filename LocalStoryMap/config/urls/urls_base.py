@@ -22,9 +22,9 @@ urlpatterns = [
     # REST Framework 인증 URL (브라우저에서 로그인/로그아웃)
     path("api-auth/", include("rest_framework.urls")),
     # 토큰 인증 엔드포인트
-    path('api/token/', obtain_auth_token, name='api_token_auth'),
+    path("api/token/", obtain_auth_token, name="api_token_auth"),
     # ai_service 앱의 엔드포인트
-    path('api/', include('ai_service.urls')),
+    path("api/", include("ai_service.urls")),
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────
