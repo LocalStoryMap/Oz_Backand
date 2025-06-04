@@ -66,6 +66,12 @@ INSTALLED_APPS = [
     'storages',
 ]
 
+# ─── DEBUG 모드에서만 Debug Toolbar를 등록 ───────────────────
+if DEBUG:
+    INSTALLED_APPS += [
+        'debug_toolbar',
+    ]
+
 # ─── 미들웨어 설정 ────────────────────────────────────────
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -77,6 +83,20 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# ─── Debug Toolbar 미들웨어 (Debug 모드일 때만) ──────────────
+if DEBUG:
+    MIDDLEWARE = [
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    ] + MIDDLEWARE
+
+# ─── INTERNAL_IPS 설정 (Debug Toolbar 표시할 IP) ────────────
+if DEBUG:
+    INTERNAL_IPS = [
+        '127.0.0.1',
+        'localhost',
+        # Docker 환경 등에서 외부 IP가 다를 경우 필요한 IP를 추가하세요.
+    ]
 
 # ─── 템플릿 설정 ──────────────────────────────────────────
 TEMPLATES = [
@@ -157,7 +177,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        'django_rest_framework.renderers.BrowsableAPIRenderer',
     ],
 }
 
@@ -172,7 +192,7 @@ CACHES = {
 # ─── 이메일 설정 (개발용) ─────────────────────────────────
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# ─── 로깅 설정 ────────────────────────────────────────────
+# ─── 로깅 설정 ───────────────────────────────────────────
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

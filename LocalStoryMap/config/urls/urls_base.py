@@ -29,6 +29,13 @@ urlpatterns = [
     path('api/token/', obtain_auth_token, name='api_token_auth')
 ]
 
+# ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
+
 # 개발 환경에서만 파일 서빙
 if settings.DEBUG:
     # 미디어 파일 서빙

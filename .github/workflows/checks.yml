@@ -12,45 +12,57 @@ jobs:
         working-directory: ./LocalStoryMap
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
 
-    - name: Install Poetry (최신 버전)
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install Poetry (최신 버전)
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Verify Poetry version
-      run: |
-        poetry --version
+      - name: Verify Poetry version
+        run: |
+          poetry --version
 
-    - name: Set Python version in pyproject.toml
-      run: |
-        poetry env use 3.13
+      - name: Set Python version in pyproject.toml
+        run: |
+          poetry env use 3.13
 
-    - name: Install dependencies
-      run: |
-        poetry install
+      - name: Install dependencies
+        run: |
+          poetry install --no-interaction --no-ansi
 
-    - name: 🔥 Fail if dev setting is in manage.py
-      run: |
-        if grep -q "settings.dev" manage.py; then
-          echo "❌ ERROR: You are trying to deploy with dev settings."
-          exit 1
-        fi
+      - name: 🖤 Check code formatting with Black
+        run: |
+          poetry run black --check .
 
-    - name: 🚫 Fail if there are missing migrations
-      run: |
-        poetry run python manage.py makemigrations --check --dry-run --settings=config.settings.dev
+      - name: 🔀 Check import sorting with isort
+        run: |
+          poetry run isort --check-only .
 
-    #- name: 2️⃣ Run tests (pytest)
-      #env:
-        #DJANGO_SETTINGS_MODULE: config.settings.dev
-      #run: |
-        #poetry run pip install pytest pytest-django
-        #poetry run pytest --disable-warnings
+      - name: 📏 Run mypy type checks
+        run: |
+          poetry run mypy .
+
+      - name: 🚫 Ensure you're not using dev settings in production
+        run: |
+          if grep -q "settings.dev" manage.py; then
+            echo "❌ ERROR: You are trying to deploy with dev settings."
+            exit 1
+          fi
+
+      - name: 🚫 Fail if there are missing migrations
+        run: |
+          poetry run python manage.py makemigrations --check --dry-run --settings=config.settings.dev
+
+      # - name: 2️⃣ Run tests (pytest)
+      #   env:
+      #     DJANGO_SETTINGS_MODULE: config.settings.dev
+      #   run: |
+      #     poetry run pip install pytest pytest-django
+      #     poetry run pytest --disable-warnings
