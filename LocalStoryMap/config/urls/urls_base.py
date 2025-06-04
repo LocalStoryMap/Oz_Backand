@@ -26,7 +26,9 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
 
     # 토큰 인증 엔드포인트
-    path('api/token/', obtain_auth_token, name='api_token_auth')
+    path('api/token/', obtain_auth_token, name='api_token_auth'),
+    # ai_service 앱의 엔드포인트
+    path('api/', include('ai_service.urls')),
 ]
 
 # 개발 환경에서만 파일 서빙
