@@ -30,8 +30,8 @@ LocalStoryMap은 사용자들이 지역의 특별한 이야기와 경험을 지�
 
 ### 1. 저장소 클론
 ```bash
-git clone https://github.com/LocalStoryMap/Oz_Backand.git
-cd Oz_Backand/LocalStoryMap
+git clone https://github.com/LocalStoryMap/Oz_Backend.git
+cd Oz_Backend/LocalStoryMap
 ```
 
 ### 2. Poetry 설치 및 의존성 설치
@@ -333,7 +333,7 @@ poetry run python manage.py collectstatic --clear --settings=config.settings.dev
 
 ## 📞 연락처
 
-- **팀장**: [GitHub 이슈](https://github.com/LocalStoryMap/Oz_Backand/issues)로 문의
+- **팀장**: [GitHub 이슈](https://github.com/LocalStoryMap/Oz_Backend/issues)로 문의
 - **급한 문의**: Discord 채널 활용
 - **배포 상태**: GitHub Actions에서 실시간 확인
 

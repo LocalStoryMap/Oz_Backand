@@ -12,12 +12,19 @@ psycopg2-binary = "^2.9.10"
 python-dotenv = "^1.1.0"
 djangorestframework = "^3.16.0"
 django-storages = "^1.14.6"
-boto3 = "^1.38.23"
 requests = "^2.32.3"
 django-cors-headers = "^4.7.0"
 redis = "^6.1.0"
 django-redis = "^5.4.0"
 gunicorn = "^23.0.0"
+boto3 = "1.35.99"
+sentry-sdk = "^2.29.1"
+django-debug-toolbar = "^5.2.0"
+black = "^23.0"
+isort = "^5.0"
+mypy = "^1.0"
+django-stubs = {extras = ["compatible-mypy"], version = "^5.2.0"}
+djangorestframework-stubs = {extras = ["compatible-mypy"], version = "^3.16.0"}
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^4.1"
@@ -26,3 +33,18 @@ drf-yasg = "^1.21.10"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+# Django·DRF 외에 타입 정보가 없는 서드파티 모듈은 무시
+ignore_missing_imports = true
+
+# django-stubs와 djangorestframework-stubs용 플러그인 로드
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main",
+]
+
+[tool.django-stubs]
+# Django 설정 파일 경로 지정 (개발용)
+django_settings_module = "config.settings.dev"
+strict_settings = true
