@@ -27,6 +27,7 @@ django-stubs = {extras = ["compatible-mypy"], version = "^5.2.0"}
 djangorestframework-stubs = {extras = ["compatible-mypy"], version = "^3.16.0"}
 drf-yasg = "^1.21.10"
 djangorestframework-simplejwt = "^5.5.0"
+pyhumps = "^3.8.0"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^4.1"

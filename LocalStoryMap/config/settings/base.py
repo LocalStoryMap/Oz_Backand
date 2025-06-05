@@ -158,10 +158,8 @@ if (
     and AWS_SECRET_ACCESS_KEY
     and AWS_STORAGE_BUCKET_NAME
 ):
-    # ─── Static + Media를 모두 S3에 올리는 경우 (현재는 사용하지 않음) ────
+    # ─── Static/Media ────────────────────────────────────────────────
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    # STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    # 위 줄을 주석 처리하여 Static은 로컬로 유지합니다.  # ◀ 수정됨
 
     # S3 URL 설정
     STATIC_URL = "/static/"
@@ -170,21 +168,16 @@ if (
     # 로컬 정적 디렉토리(개발용) 설정
     STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
-    # MEDIA_ROOT은 실제로 쓰이지 않지만, 로컬에 폴더는 남겨둡니다.
-    MEDIA_ROOT = BASE_DIR / "media"  # ◀ 추가됨
-
+    MEDIA_ROOT = BASE_DIR / "media"
 else:
     # ─── Static은 로컬에서 서빙, Media만 S3에 저장 ─────────────────
     # 1) Static (로컬 디스크)
     STATIC_URL = "/static/"
     STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
-    STATICFILES_STORAGE = (
-        "django.contrib.staticfiles.storage.StaticFilesStorage"  # ◀ 수정됨
-    )
-
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     # 2) Media (업로드된 파일만 S3로)
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"  # ◀ 수정됨
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}"
     MEDIA_ROOT = BASE_DIR / "media"
 
@@ -205,7 +198,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
+        "config.renderers.CamelCaseJSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }
