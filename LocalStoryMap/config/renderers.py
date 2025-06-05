@@ -1,10 +1,12 @@
 import humps
 from rest_framework.renderers import JSONRenderer
 
+
 class CamelCaseJSONRenderer(JSONRenderer):
     """
     DRF가 반환하는 JSON 응답의 key를 pyhumps.camelize() 로 snake_case → camelCase 로 변환합니다.
     """
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
         # data가 dict나 list가 아니면, 기본 JSONRenderer 작업을 그대로 수행
         if data is None or not isinstance(data, (dict, list)):
