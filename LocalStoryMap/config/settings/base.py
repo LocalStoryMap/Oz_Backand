@@ -164,7 +164,7 @@ if (
     # 위 줄을 주석 처리하여 Static은 로컬로 유지합니다.  # ◀ 수정됨
 
     # S3 URL 설정
-    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}"
+    STATIC_URL = "/static/"
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}"
 
     # 로컬 정적 디렉토리(개발용) 설정
