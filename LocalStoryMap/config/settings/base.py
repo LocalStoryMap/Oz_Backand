@@ -27,7 +27,7 @@ if env_path.exists():
 
 # ─── 환경변수 기반 설정 ────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-if-not-set")
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
 ROOT_URLCONF = "config.urls"
 
 # ─── S3(Object Storage) 환경변수 매핑 ───────────────────────
@@ -65,13 +65,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "apps.users",
     # Third party apps
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
     "storages",
+    "drf_yasg",
 ]
 
+AUTH_USER_MODEL = "users.User"
 # ─── DEBUG 모드에서만 Debug Toolbar를 등록 ───────────────────
 if DEBUG:
     INSTALLED_APPS += [
@@ -184,9 +187,11 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -194,6 +199,23 @@ REST_FRAMEWORK = {
     ],
 }
 
+from datetime import timedelta
+
+# 카카오 로그인 시에 JWT를 발급하기 위한 Simple JWT 설정
+SIMPLE_JWT = {
+    # 토큰 만료 기간(ex: Access 5분, Refresh 14일)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,  # Django의 SECRET_KEY를 그대로 사용
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+}
+
+KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
+KAKAO_REDIRECT_URI = os.getenv("KAKAO_REDIRECT_URI", "")
 # ─── 캐시 설정 ────────────────────────────────────────────
 CACHES = {
     "default": {
