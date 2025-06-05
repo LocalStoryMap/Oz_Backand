@@ -21,13 +21,13 @@ class KakaoLoginView(APIView):
             type=openapi.TYPE_OBJECT,
             required=["code"],
             properties={
-                "code": openapi.Schema(type=openapi.TYPE_STRING, description="카카오 인가 코드"),
+                "code": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="카카오 인가 코드"
+                ),
             },
         ),
         responses={
-            200: openapi.Response(
-                description="로그인 성공", schema=UserSerializer
-            ),
+            200: openapi.Response(description="로그인 성공", schema=UserSerializer),
             400: "실패",
         },
     )
