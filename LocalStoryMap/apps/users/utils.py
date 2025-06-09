@@ -48,6 +48,7 @@ class KakaoAPI:
             "profile_image": profile.get("profile_image_url"),
         }
 
+
 def get_google_user_info(code: str) -> dict:
     """
     1) 인가 코드를 토큰으로 교환
@@ -56,10 +57,10 @@ def get_google_user_info(code: str) -> dict:
     # 1) 액세스 토큰 요청
     token_url = "https://oauth2.googleapis.com/token"
     data = {
-        "grant_type":    "authorization_code",
-        "code":          code,
-        "redirect_uri":  settings.GOOGLE_OAUTH2_REDIRECT_URI,
-        "client_id":     settings.GOOGLE_OAUTH2_CLIENT_ID,
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": settings.GOOGLE_OAUTH2_REDIRECT_URI,
+        "client_id": settings.GOOGLE_OAUTH2_CLIENT_ID,
         "client_secret": settings.GOOGLE_OAUTH2_CLIENT_SECRET,
     }
     token_resp = requests.post(token_url, data=data)

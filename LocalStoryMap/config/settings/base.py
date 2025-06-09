@@ -225,7 +225,9 @@ KAKAO_REDIRECT_URI = os.getenv("KAKAO_REDIRECT_URI", "")
 
 GOOGLE_OAUTH2_CLIENT_ID = os.getenv("GOOGLE_OAUTH2_CLIENT_ID", "")
 GOOGLE_OAUTH2_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH2_CLIENT_SECRET", "")
-GOOGLE_OAUTH2_REDIRECT_URI = os.getenv("GOOGLE_OAUTH2_REDIRECT_URI", "http://127.0.0.1:8000/users/login/google/callback/")
+GOOGLE_OAUTH2_REDIRECT_URI = os.getenv(
+    "GOOGLE_OAUTH2_REDIRECT_URI", "http://127.0.0.1:8000/users/login/google/callback/"
+)
 
 # ─── 캐시 설정 ────────────────────────────────────────────
 CACHES = {

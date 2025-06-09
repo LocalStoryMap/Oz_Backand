@@ -1,3 +1,5 @@
+from urllib.parse import unquote
+
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -5,7 +7,6 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from urllib.parse import unquote
 
 from .models import User
 from .serializers import UserSerializer
@@ -93,6 +94,7 @@ class KakaoLoginView(APIView):
                 status=400,
             )
 
+
 class GoogleLoginView(APIView):
     @swagger_auto_schema(
         operation_summary="Google 소셜 로그인 (인가 코드 방식)",
@@ -100,8 +102,7 @@ class GoogleLoginView(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 "code": openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="Google OAuth2 인가 코드"
+                    type=openapi.TYPE_STRING, description="Google OAuth2 인가 코드"
                 ),
             },
             required=["code"],
@@ -111,17 +112,19 @@ class GoogleLoginView(APIView):
     def post(self, request):
         code = request.data.get("code", "")
         if not code:
-            return Response({"error": "code(인가 코드)를 전달해주세요."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "code(인가 코드)를 전달해주세요."}, status=status.HTTP_400_BAD_REQUEST
+            )
         code = unquote(code)
 
         # 1) 구글에서 토큰 교환 & 유저 정보 조회
         try:
             user_info = get_google_user_info(code)
         except Exception as e:
-            return Response({"error": "구글 토큰 요청 또는 사용자 정보 조회 실패",
-                             "details": str(e)},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "구글 토큰 요청 또는 사용자 정보 조회 실패", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         google_sub = user_info.get("sub")
         email = user_info.get("email")
@@ -144,7 +147,14 @@ class GoogleLoginView(APIView):
                 user.social_id = google_sub
                 user.profile_image = picture
                 user.last_login = timezone.now()
-                user.save(update_fields=["provider", "social_id", "profile_image", "last_login"])
+                user.save(
+                    update_fields=[
+                        "provider",
+                        "social_id",
+                        "profile_image",
+                        "last_login",
+                    ]
+                )
                 created = False
             else:
                 # (C) 완전 신규 이메일
@@ -160,9 +170,11 @@ class GoogleLoginView(APIView):
 
         # 4) JWT 발급 및 응답
         refresh = RefreshToken.for_user(user)
-        return Response({
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "user": UserSerializer(user).data,
-            "is_new_user": created,
-        })
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(user).data,
+                "is_new_user": created,
+            }
+        )
