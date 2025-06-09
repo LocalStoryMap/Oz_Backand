@@ -70,6 +70,10 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "storages",
+    # own
+    "apps.marker",
+    "apps.route",
+    "apps.route_marker",
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar를 등록 ───────────────────
