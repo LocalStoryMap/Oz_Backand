@@ -2,6 +2,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from rest_framework import permissions
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import DefaultRouter
 
@@ -11,6 +14,22 @@ router = DefaultRouter()
 # 나중에 ViewSet 추가시 여기에 등록
 # router.register(r'users', UserViewSet)
 # router.register(r'posts', PostViewSet)
+
+
+# ─── Swagger 설정 ──────────────────────────────────────────
+schema_view = get_schema_view(
+    openapi.Info(
+        title="1LLO1LLO",
+        default_version="v1",
+        description="1LLO1LLO 프로젝트 RESTful API 문서",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="email@email.com"),
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+
 
 urlpatterns = [
     # Django 관리자 페이지
@@ -23,6 +42,17 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls")),
     # 토큰 인증 엔드포인트
     path("api/token/", obtain_auth_token, name="api_token_auth"),
+    path("users/", include("apps.users.urls", namespace="users")),
+    path(
+        "swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    path(
+        "redoc/",
+        schema_view.with_ui("redoc", cache_timeout=0),
+        name="schema-redoc",
+    ),
     # ai_service 앱의 엔드포인트
     path("api/", include("ai_service.urls")),
 ]

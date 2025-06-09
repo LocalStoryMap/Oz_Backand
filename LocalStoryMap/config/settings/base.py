@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "apps.users",
     # Third party apps
     "rest_framework",
     "rest_framework.authtoken",
@@ -72,8 +73,10 @@ INSTALLED_APPS = [
     "storages",
     # myapp
     "ai_service",  # 요약/챗봇 기능을 담당할 앱
+    "drf_yasg",
 ]
 
+AUTH_USER_MODEL = "users.User"
 # ─── DEBUG 모드에서만 Debug Toolbar를 등록 ───────────────────
 if DEBUG:
     INSTALLED_APPS += [
@@ -157,23 +160,27 @@ if (
     and AWS_SECRET_ACCESS_KEY
     and AWS_STORAGE_BUCKET_NAME
 ):
-    # 파일 및 정적 파일 스토리지 백엔드
+    # ─── Static/Media ────────────────────────────────────────────────
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
     # S3 URL 설정
-    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}"
+    STATIC_URL = "/static/"
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}"
 
-    # 로컬 정적 디렉토리는 개발용 유지
+    # 로컬 정적 디렉토리(개발용) 설정
     STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
+    MEDIA_ROOT = BASE_DIR / "media"
 else:
-    # 로컬 파일 시스템 사용
+    # ─── Static은 로컬에서 서빙, Media만 S3에 저장 ─────────────────
+    # 1) Static (로컬 디스크)
     STATIC_URL = "/static/"
     STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
-    MEDIA_URL = "/media/"
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    # 2) Media (업로드된 파일만 S3로)
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}"
     MEDIA_ROOT = BASE_DIR / "media"
 
 # ─── 기본 설정 ────────────────────────────────────────────
@@ -186,16 +193,35 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
+        "config.renderers.CamelCaseJSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }
 
+from datetime import timedelta
+
+# 카카오 로그인 시에 JWT를 발급하기 위한 Simple JWT 설정
+SIMPLE_JWT = {
+    # 토큰 만료 기간(ex: Access 5분, Refresh 14일)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,  # Django의 SECRET_KEY를 그대로 사용
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+}
+
+KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
+KAKAO_REDIRECT_URI = os.getenv("KAKAO_REDIRECT_URI", "")
 # ─── 캐시 설정 ────────────────────────────────────────────
 CACHES = {
     "default": {
