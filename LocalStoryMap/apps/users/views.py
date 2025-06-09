@@ -1,4 +1,5 @@
-# apps/users/views.py
+from urllib.parse import unquote
+
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -9,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
 from .serializers import UserSerializer
-from .utils import KakaoAPI
+from .utils import KakaoAPI, get_google_user_info
 
 
 class KakaoLoginView(APIView):
@@ -92,3 +93,88 @@ class KakaoLoginView(APIView):
                 {"detail": f"카카오 로그인 중 오류가 발생했습니다. {str(e)}"},
                 status=400,
             )
+
+
+class GoogleLoginView(APIView):
+    @swagger_auto_schema(
+        operation_summary="Google 소셜 로그인 (인가 코드 방식)",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "code": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="Google OAuth2 인가 코드"
+                ),
+            },
+            required=["code"],
+        ),
+        responses={200: openapi.Response(description="JWT 토큰")},
+    )
+    def post(self, request):
+        code = request.data.get("code", "")
+        if not code:
+            return Response(
+                {"error": "code(인가 코드)를 전달해주세요."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        code = unquote(code)
+
+        # 1) 구글에서 토큰 교환 & 유저 정보 조회
+        try:
+            user_info = get_google_user_info(code)
+        except Exception as e:
+            return Response(
+                {"error": "구글 토큰 요청 또는 사용자 정보 조회 실패", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        google_sub = user_info.get("sub")
+        email = user_info.get("email")
+        name = user_info.get("name")
+        picture = user_info.get("picture", "")
+
+        # 2) DB 에 이미 provider="google", social_id=google_sub 으로 가입된 유저가 있는지 찾기
+        user = User.objects.filter(provider="google", social_id=google_sub).first()
+        if user:
+            # (A) 완전 처음 로그인은 아님
+            user.last_login = timezone.now()
+            user.save(update_fields=["last_login"])
+            created = False
+        else:
+            # 3) 아직 google social_id 로는 없는 유저 → 이메일 기준으로 있던 유저인지 다시 확인
+            user = User.objects.filter(email=email).first()
+            if user:
+                # (B) 카카오 등으로 이미 가입된 같은 이메일 계정이 있다면, 해당 레코드를 “구글”로 업데이트
+                user.provider = "google"
+                user.social_id = google_sub
+                user.profile_image = picture
+                user.last_login = timezone.now()
+                user.save(
+                    update_fields=[
+                        "provider",
+                        "social_id",
+                        "profile_image",
+                        "last_login",
+                    ]
+                )
+                created = False
+            else:
+                # (C) 완전 신규 이메일
+                user = User.objects.create(
+                    email=email,
+                    username=email.split("@")[0],
+                    first_name=name,
+                    provider="google",
+                    social_id=google_sub,
+                    profile_image=picture,
+                )
+                created = True
+
+        # 4) JWT 발급 및 응답
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(user).data,
+                "is_new_user": created,
+            }
+        )
