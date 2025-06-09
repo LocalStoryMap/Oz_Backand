@@ -1,4 +1,4 @@
-import humps
+from humps.main import camelize
 from rest_framework.renderers import JSONRenderer
 
 
@@ -13,5 +13,5 @@ class CamelCaseJSONRenderer(JSONRenderer):
             return super().render(data, accepted_media_type, renderer_context)
 
         # pyhumps.camelize() 로 중첩된 딕셔너리/리스트 내부의 모든 키를 camelCase로 변환
-        camelized = humps.camelize(data)
+        camelized = camelize(data)
         return super().render(camelized, accepted_media_type, renderer_context)
