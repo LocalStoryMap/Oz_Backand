@@ -26,6 +26,7 @@ mypy = "^1.0"
 django-stubs = {extras = ["compatible-mypy"], version = "^5.2.0"}
 djangorestframework-stubs = {extras = ["compatible-mypy"], version = "^3.16.0"}
 pillow = "^11.2.1"
+haversine = "^2.9.0"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^4.1"

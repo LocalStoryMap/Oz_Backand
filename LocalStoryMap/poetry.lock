@@ -485,6 +485,18 @@ testing = ["coverage", "eventlet", "gevent", "pytest", "pytest-cov"]
 tornado = ["tornado (>=0.2)"]
 
 [[package]]
+name = "haversine"
+version = "2.9.0"
+description = "Calculate the distance between 2 points on Earth."
+optional = false
+python-versions = ">=3.5"
+groups = ["main"]
+files = [
+    {file = "haversine-2.9.0-py2.py3-none-any.whl", hash = "sha256:d32031b6b4232e37764730a781a3b8cb248710f92aca6f553b8097524420754d"},
+    {file = "haversine-2.9.0.tar.gz", hash = "sha256:1103d7e1f0f108c25b31b63452c54d9d6f29389a70de7dd75fd4b908329b6fcf"},
+]
+
+[[package]]
 name = "idna"
 version = "3.10"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -1154,4 +1166,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "b29b452ffddbd1292685d0de3bba0e7e3d74e3d9f98c84f4433304952f0c0e02"
+content-hash = "defc470f09876eab32974ec3912d62ebb33ce7f0b77bd3177e04f135edf0b614"

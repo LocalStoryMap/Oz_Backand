@@ -5,6 +5,7 @@ from django.urls import include, path
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import DefaultRouter
 
+
 # API 라우터 설정
 router = DefaultRouter()
 
@@ -23,6 +24,7 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls")),
     # 토큰 인증 엔드포인트
     path("api/token/", obtain_auth_token, name="api_token_auth"),
+    path("", include("apps.marker.urls")),
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────
