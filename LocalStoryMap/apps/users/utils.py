@@ -47,3 +47,28 @@ class KakaoAPI:
             "nickname": profile.get("nickname"),
             "profile_image": profile.get("profile_image_url"),
         }
+
+def get_google_user_info(code: str) -> dict:
+    """
+    1) 인가 코드를 토큰으로 교환
+    2) 토큰으로 사용자 정보 조회
+    """
+    # 1) 액세스 토큰 요청
+    token_url = "https://oauth2.googleapis.com/token"
+    data = {
+        "grant_type":    "authorization_code",
+        "code":          code,
+        "redirect_uri":  settings.GOOGLE_OAUTH2_REDIRECT_URI,
+        "client_id":     settings.GOOGLE_OAUTH2_CLIENT_ID,
+        "client_secret": settings.GOOGLE_OAUTH2_CLIENT_SECRET,
+    }
+    token_resp = requests.post(token_url, data=data)
+    token_resp.raise_for_status()
+    access_token = token_resp.json().get("access_token")
+
+    # 2) 사용자 정보 조회 (OpenID Connect)
+    userinfo_url = "https://openidconnect.googleapis.com/v1/userinfo"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    userinfo_resp = requests.get(userinfo_url, headers=headers)
+    userinfo_resp.raise_for_status()
+    return userinfo_resp.json()

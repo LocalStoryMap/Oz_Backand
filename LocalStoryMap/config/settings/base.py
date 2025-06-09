@@ -9,21 +9,21 @@ env_path = BASE_DIR / ".env"
 if env_path.exists():
     load_dotenv(env_path)
 
-    # ─── Sentry SDK 초기화 ───────────────────────────────────────
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
+# ─── Sentry SDK 초기화 ───────────────────────────────────────
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
-    SENTRY_DSN = os.getenv("SENTRY_DSN")
-    SENTRY_RELEASE = os.getenv("SENTRY_RELEASE")
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+SENTRY_RELEASE = os.getenv("SENTRY_RELEASE")
 
-    if SENTRY_DSN:
-        sentry_sdk.init(
-            dsn=SENTRY_DSN,
-            integrations=[DjangoIntegration()],
-            environment=os.getenv("DJANGO_ENV", "prod"),  # dev/ prod 구분
-            release=SENTRY_RELEASE,  # 커밋 SHA 또는 태그와 매핑
-            # traces_sample_rate=1.0,  # 필요 시 APM 추적 옵션
-        )
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        environment=os.getenv("DJANGO_ENV", "prod"),  # dev/ prod 구분
+        release=SENTRY_RELEASE,  # 커밋 SHA 또는 태그와 매핑
+        # traces_sample_rate=1.0,  # 필요 시 APM 추적 옵션
+    )
 
 # ─── 환경변수 기반 설정 ────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-if-not-set")
@@ -222,6 +222,11 @@ SIMPLE_JWT = {
 
 KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
 KAKAO_REDIRECT_URI = os.getenv("KAKAO_REDIRECT_URI", "")
+
+GOOGLE_OAUTH2_CLIENT_ID = os.getenv("GOOGLE_OAUTH2_CLIENT_ID", "")
+GOOGLE_OAUTH2_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH2_CLIENT_SECRET", "")
+GOOGLE_OAUTH2_REDIRECT_URI = os.getenv("GOOGLE_OAUTH2_REDIRECT_URI", "http://127.0.0.1:8000/users/login/google/callback/")
+
 # ─── 캐시 설정 ────────────────────────────────────────────
 CACHES = {
     "default": {
