@@ -27,7 +27,7 @@ if env_path.exists():
 
 # ─── 환경변수 기반 설정 ────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-if-not-set")
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
 ROOT_URLCONF = "config.urls"
 
 # ─── S3(Object Storage) 환경변수 매핑 ───────────────────────

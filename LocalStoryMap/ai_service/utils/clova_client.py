@@ -44,10 +44,8 @@ class ClovaClient:
         주어진 긴 텍스트(text)를 간결하게 요약해서 반환.
         Clova Chat-completions API를 '요약 봇' 역할로 호출.
         """
-        # 1) 메시지 포맷: system 역할로 "너는 요약 전문가다. 간결하게 요약해라."
-        #    user 역할로 원문을 넣어서 요청.
         payload = {
-            "model": "HCX-003",  # SKILL_ID와 동일하지만, 혹시 모델 지정이 필요하면 여기서 바꿀 수 있음
+            "model": "HCX-003",
             "messages": [
                 {
                     "role": "system",
@@ -58,7 +56,6 @@ class ClovaClient:
                 },
                 {"role": "user", "content": text},
             ],
-            # 옵션: max_tokens, temperature 등은 필요에 따라 조절 가능
             "max_tokens": max_tokens,
             "temperature": temperature,
         }
@@ -67,10 +64,25 @@ class ClovaClient:
             url=self.base_url,
             headers=self._default_headers(),
             json=payload,
-            timeout=30,  # 타임아웃 적절히 설정
+            timeout=30,
         )
         response.raise_for_status()
         data = response.json()
+
+        # Clova API가 정상 응답(20000 OK)을 주었는지 확인
+        status_code = data.get("status", {}).get("code")
+        if status_code != "20000":
+            raise ValueError(
+                f"Clova 요약 API 호출 실패: status.code = {status_code}, 전체 응답: {data}"
+            )
+
+        try:
+            # 실제 Clova 요약 텍스트는 result.message.content에 담겨 있음
+            summary = data["result"]["message"]["content"]
+        except (KeyError, TypeError):
+            raise ValueError("Clova 요약 API 응답 구조가 예상과 다릅니다: {}".format(data))
+
+        return summary
 
         # Clova 응답 예시 구조:
         # {
@@ -88,21 +100,10 @@ class ClovaClient:
         #   ],
         #   "usage": { ... }
         # }
-        try:
-            summary = data["choices"][0]["message"]["content"]
-        except (KeyError, IndexError):
-            raise ValueError("Clova 요약 API 응답 구조가 예상과 다릅니다: {}".format(data))
-        return summary
 
     def chat(self, messages: list, max_tokens: int = 512, temperature: float = 0.8):
         """
         사용자-챗봇 대화 이력(messages)를 Clova Chat API에 넘겨서 'assistant'의 응답을 받아 반환.
-        messages = [
-            {"role": "system", "content": "너는 ..."},
-            {"role": "user", "content": "..."},
-            {"role": "assistant", "content": "..."},
-            ...
-        ]
         """
         payload = {
             "model": "HCX-003",
@@ -117,8 +118,17 @@ class ClovaClient:
         response.raise_for_status()
         data = response.json()
 
+        # 1) status.code 체크
+        status_code = data.get("status", {}).get("code")
+        if status_code != "20000":
+            raise ValueError(
+                f"Clova Chat API 호출 실패: status.code = {status_code}, 전체 응답: {data}"
+            )
+
+        # 2) result.message.content 위치에서 실제 답변을 꺼냄
         try:
-            reply = data["choices"][0]["message"]["content"]
-        except (KeyError, IndexError):
+            reply = data["result"]["message"]["content"]
+        except (KeyError, TypeError):
             raise ValueError("Clova Chat API 응답 구조가 예상과 다릅니다: {}".format(data))
+
         return reply
