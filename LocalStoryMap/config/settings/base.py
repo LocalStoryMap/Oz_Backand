@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "storages",
+    # myapp
+    "ai_service",  # 요약/챗봇 기능을 담당할 앱
     "drf_yasg",
 ]
 
@@ -263,3 +265,16 @@ LOGGING = {
         },
     },
 }
+
+# Clova Studio 환경변수
+CLOVA_API_KEY = os.getenv("CLOVA_API_KEY", "")  # 반드시 값 있어야 함
+CLOVA_STUDIO_SKILL_ID = os.getenv("CLOVA_STUDIO_SKILL_ID", "")
+CLOVA_STUDIO_BASE_URL = os.getenv(
+    "CLOVA_STUDIO_BASE_URL", "https://clovastudio.stream.ntruss.com/testapp/v1"
+)
+
+# Clova Chat-completions URL 구성 (기본 형식)
+# 예) https://clovastudio.stream.ntruss.com/testapp/v1/chat-completions/HCX-003
+CLOVA_CHAT_COMPLETIONS_URL = (
+    f"{CLOVA_STUDIO_BASE_URL}/chat-completions/{CLOVA_STUDIO_SKILL_ID}"
+)
