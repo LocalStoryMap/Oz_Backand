@@ -25,6 +25,7 @@ urlpatterns = [
     # 토큰 인증 엔드포인트
     path("api/token/", obtain_auth_token, name="api_token_auth"),
     path("", include("apps.marker.urls")),
+    path("", include("apps.route.urls")),
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────

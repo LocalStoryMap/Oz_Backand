@@ -9,39 +9,39 @@ class Marker(models.Model):
     # )
     marker_name = models.CharField(
         max_length=100,
-        verbose_name='마커명'
+        verbose_name='마커명',
     )
     adress = models.TextField(
-        verbose_name='도로명주소 or 지번주소'
+        verbose_name='도로명주소 or 지번주소',
     )
     description = models.TextField(
         blank=True,
         null=True,
-        verbose_name='마커 설명'
+        verbose_name='마커 설명',
     )
     image = models.ImageField(
         upload_to='markers/',  # 업로드될 경로 S3 추후 적용
         blank=True,
         null=True,
-        verbose_name='마커 이미지'
+        verbose_name='마커 이미지',
     )
     latitude = models.DecimalField(
         max_digits=10,
         decimal_places=7,
-        verbose_name='위도'
+        verbose_name='위도',
     )
     longitude = models.DecimalField(
         max_digits=10,
         decimal_places=7,
-        verbose_name='경도'
+        verbose_name='경도',
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='생성일시'
+        verbose_name='생성일시',
     )
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name='수정일시'
+        verbose_name='수정일시',
     )
 
     class Meta:

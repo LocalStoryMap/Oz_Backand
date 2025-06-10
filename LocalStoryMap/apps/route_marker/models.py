@@ -7,21 +7,21 @@ class RouteMarker(models.Model):
         'route.Route',
         on_delete=models.CASCADE,
         related_name='route_markers',
-        verbose_name='경로'
+        verbose_name='경로',
     )
     marker = models.ForeignKey(
         'marker.Marker',
         on_delete=models.CASCADE,
         related_name='route_markers',
-        verbose_name='마커'
+        verbose_name='마커',
     )
     sequence = models.PositiveIntegerField(
         verbose_name='순서',
-        help_text='경로 내에서의 마커 순서 (1부터 시작)'
+        help_text='경로 내에서의 마커 순서 (1부터 시작)',
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='연결일시'
+        verbose_name='연결일시',
     )
 
     class Meta:
