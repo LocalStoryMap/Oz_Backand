@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
 from django.http import JsonResponse
+from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -11,8 +11,10 @@ from rest_framework.routers import DefaultRouter
 
 # 헬스체크용 뷰
 
+
 def health(request):
     return JsonResponse({"status": "ok"})
+
 
 # API 라우터 설정
 router = DefaultRouter()
