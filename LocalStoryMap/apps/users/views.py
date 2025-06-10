@@ -178,3 +178,48 @@ class GoogleLoginView(APIView):
                 "is_new_user": created,
             }
         )
+
+
+class LogoutView(APIView):
+    """
+    1) 클라이언트로부터 Refresh Token을 받아 블랙리스트에 등록 → 로그아웃 처리
+    2) 로그인 상태에서만 호출 가능
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="로그아웃",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["refresh"],
+            properties={
+                "refresh": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="블랙리스트 처리할 Refresh Token"
+                ),
+            },
+        ),
+        responses={
+            205: openapi.Response(description="로그아웃 성공 (Reset Content)"),
+            400: openapi.Response(description="잘못된 요청"),
+        },
+    )
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"detail": "refresh 토큰을 전달해주세요."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # RefreshToken 객체 생성 → blacklist() 호출
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except Exception as e:
+            return Response(
+                {"detail": "토큰 블랙리스트 처리 실패", "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 205 Reset Content: 요청을 성공적으로 처리했고, 더 이상 해당 토큰을 사용할 수 없음을 의미
+        return Response(status=status.HTTP_205_RESET_CONTENT)

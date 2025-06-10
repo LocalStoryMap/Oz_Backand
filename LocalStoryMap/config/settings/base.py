@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     # Third party apps
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "storages",
     # myapp
@@ -285,3 +286,19 @@ CLOVA_STUDIO_BASE_URL = os.getenv(
 CLOVA_CHAT_COMPLETIONS_URL = (
     f"{CLOVA_STUDIO_BASE_URL}/chat-completions/{CLOVA_STUDIO_SKILL_ID}"
 )
+
+# ─── drf-yasg (Swagger) 설정 ─────────────────────────────────────
+
+SWAGGER_SETTINGS = {
+    # 세션 인증(BasicAuth) UI 끄기
+    "USE_SESSION_AUTH": False,
+    # JWT Bearer 인증 정의
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "description": 'JWT 토큰을 "Bearer <your_token>" 형태로 입력하세요.',
+            "name": "Authorization",
+            "in": "header",
+        }
+    },
+}
