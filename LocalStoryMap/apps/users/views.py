@@ -223,3 +223,40 @@ class LogoutView(APIView):
 
         # 205 Reset Content: 요청을 성공적으로 처리했고, 더 이상 해당 토큰을 사용할 수 없음을 의미
         return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+class WithdrawView(APIView):
+    """
+    회원탈퇴 API
+    - 인증된 유저만 호출할 수 있습니다.
+    - DELETE 메서드로 호출 시, 해당 user 인스턴스를 삭제합니다.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="회원 탈퇴",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "refresh": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="리프레시 토큰"
+                ),
+            },
+            required=[],
+        ),
+        responses={
+            204: openapi.Response(description="회원 탈퇴 성공"),
+            400: openapi.Response(description="요청 형식이 잘못된 경우"),
+        },
+    )
+    def delete(self, request):
+        user = request.user
+        # 리프레시 토큰을 블랙리스트에 넣움
+        refresh_token = request.data.get("refresh")
+        if refresh_token:
+            RefreshToken(refresh_token).blacklist()
+        # 2) 사용자 계정 삭제
+        user.delete()
+        # 3) 204 No Content 응답
+        return Response(status=status.HTTP_204_NO_CONTENT)
