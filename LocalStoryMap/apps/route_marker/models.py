@@ -23,6 +23,10 @@ class RouteMarker(models.Model):
         auto_now_add=True,
         verbose_name='연결일시',
     )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='수정일시',
+    )
 
     class Meta:
         db_table = 'route_markers'

@@ -1,5 +1,4 @@
 # apps/route/services.py
-from django.db import transaction
 from django.db.models import Q
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
