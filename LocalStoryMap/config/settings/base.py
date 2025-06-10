@@ -66,16 +66,30 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.users",
+    "apps.notifications",
+    "apps.follows",
+    "apps.search",
     # Third party apps
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "corsheaders",
     "storages",
+    "channels",
     # myapp
     "ai_service",  # 요약/챗봇 기능을 담당할 앱
     "drf_yasg",
 ]
+
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+    },
+}
 
 AUTH_USER_MODEL = "users.User"
 # ─── DEBUG 모드에서만 Debug Toolbar를 등록 ───────────────────
@@ -191,19 +205,30 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    # 스키마 자동생성 클래스
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # 인증 클래스 (AutoSchema 는 여기에 절대 포함하지 않습니다)
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    # 권한 설정
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
         "rest_framework.permissions.IsAuthenticated",
     ],
+    # 렌더러 클래스 추가
     "DEFAULT_RENDERER_CLASSES": [
         "config.renderers.CamelCaseJSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "LocalStoryMap API",
+    "DESCRIPTION": "local story map 서비스 API 문서",
+    "VERSION": "0.1.0",
 }
 
 from datetime import timedelta
