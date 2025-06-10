@@ -34,6 +34,9 @@ drf-yasg = "^1.21.10"
 djangorestframework-simplejwt = "^5.5.0"
 humps = "^0.2.2"
 pyhumps = "^3.8.0"
+drf-spectacular = "^0.28.0"
+channels = "^4.2.2"
+channels-redis = "^4.2.1"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^4.1"

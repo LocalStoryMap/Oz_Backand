@@ -32,29 +32,34 @@ schema_view = get_schema_view(
 
 
 urlpatterns = [
-    # Django 관리자 페이지
+    # ── Admin ─────────────────────────────────────────────────────
     path("admin/", admin.site.urls),
-    # API v1 엔드포인트 (버전 관리)
+    # ── Versioned API Endpoints ───────────────────────────────────
     path("api/v1/", include(router.urls)),
-    # 기본 API 엔드포인트 (하위 호환성)
+    # ── Backward-compatible Unversioned API ──────────────────────
     path("api/", include(router.urls)),
-    # REST Framework 인증 URL (브라우저에서 로그인/로그아웃)
+    # ── Authentication ────────────────────────────────────────────
     path("api-auth/", include("rest_framework.urls")),
-    # 토큰 인증 엔드포인트
-    path("api/token/", obtain_auth_token, name="api_token_auth"),
+    path("token/", obtain_auth_token, name="api_token_auth"),
+    # ── Application Endpoints ────────────────────────────────────
     path("users/", include("apps.users.urls", namespace="users")),
+    path(
+        "notifications/",
+        include(
+            "apps.notifications.urls",
+        ),
+    ),
+    path("follows/", include("apps.follows.urls")),
+    path("search/", include("apps.search.urls")),
+    # ── AI Service Endpoints ─────────────────────────────────────
+    path("Ai/", include("ai_service.urls")),
+    # ── API Documentation ────────────────────────────────────────
     path(
         "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    path(
-        "redoc/",
-        schema_view.with_ui("redoc", cache_timeout=0),
-        name="schema-redoc",
-    ),
-    # ai_service 앱의 엔드포인트
-    path("api/", include("ai_service.urls")),
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────
