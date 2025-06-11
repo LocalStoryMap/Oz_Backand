@@ -9,6 +9,12 @@ class UserSerializer(serializers.ModelSerializer):
     유저 정보를 JSON 형태로 변환해 주는 시리얼라이저
     """
 
+    profile_image = serializers.ImageField(
+        required=False,
+        allow_null=True,
+        use_url=True,  # 저장된 파일을 URL을 반환
+    )
+
     class Meta:
         model = User
         # 클라이언트에 노출하고자 하는 필드를 적음
@@ -30,4 +36,5 @@ class UserSerializer(serializers.ModelSerializer):
             "social_id",
             "date_joined",
             "last_login",
+            "is_paid_user",
         ]

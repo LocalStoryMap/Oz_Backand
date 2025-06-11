@@ -3,7 +3,8 @@ from urllib.parse import unquote
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions, status
+from rest_framework import generics, permissions, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -260,3 +261,49 @@ class WithdrawView(APIView):
         user.delete()
         # 3) 204 No Content 응답
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserDetailView(generics.RetrieveUpdateAPIView):
+    """
+    GET    /users/me/   → 내 정보 조회
+    PUT    /users/me/   → 내 정보 전체 수정
+    PATCH  /users/me/   → 내 정보 일부 수정
+    DELETE /users/me/   → 회원 탈퇴
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
+    parser_classes = [MultiPartParser, FormParser]  # multipart/form-data 지원
+
+    def get_object(self):
+        # 인증된 사용자 자신의 레코드만 반환
+        return self.request.user
+
+    @swagger_auto_schema(
+        operation_summary="내 정보 조회",
+        responses={
+            200: openapi.Response("내 정보 조회 성공", UserSerializer),
+        },
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="내 정보 전체 수정 (PUT)",
+        request_body=UserSerializer,
+        responses={
+            200: openapi.Response("내 정보 수정 성공", UserSerializer),
+        },
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="내 정보 일부 수정 (PATCH)",
+        request_body=UserSerializer,
+        responses={
+            200: openapi.Response("내 정보 부분 수정 성공", UserSerializer),
+        },
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
