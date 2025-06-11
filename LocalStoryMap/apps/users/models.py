@@ -42,10 +42,10 @@ class User(AbstractUser):
         help_text="카카오 또는 구글에서 제공하는 유저 고유 ID",
     )
 
-    # 5) 프로필 이미지 URL
-    profile_image = models.URLField(
-        verbose_name="프로필 이미지 URL",
-        max_length=300,
+    # 5) 프로필 이미지
+    profile_image = models.ImageField(
+        verbose_name="프로필 이미지",
+        upload_to="profile_images/",
         blank=True,
         null=True,
     )

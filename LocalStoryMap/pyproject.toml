@@ -37,6 +37,7 @@ pyhumps = "^3.8.0"
 drf-spectacular = "^0.28.0"
 channels = "^4.2.2"
 channels-redis = "^4.2.1"
+pillow = "^11.2.1"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^4.1"
@@ -60,3 +61,10 @@ plugins = [
 # Django 설정 파일 경로 지정 (개발용)
 django_settings_module = "config.settings.dev"
 strict_settings = true
+
+[tool.black]
+line-length = 88      # Black 기본값. 바꾼 게 있으면 여기에 맞춤
+
+[tool.isort]
+profile = "black"     # Black 스타일로 wrapping/줄바꿈 맞추기
+line_length = 88      # Black과 동일하게
