@@ -9,25 +9,25 @@ env_path = BASE_DIR / ".env"
 if env_path.exists():
     load_dotenv(env_path)
 
-    # ─── Sentry SDK 초기화 ───────────────────────────────────────
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
+# ─── Sentry SDK 초기화 ───────────────────────────────────────
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
-    SENTRY_DSN = os.getenv("SENTRY_DSN")
-    SENTRY_RELEASE = os.getenv("SENTRY_RELEASE")
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+SENTRY_RELEASE = os.getenv("SENTRY_RELEASE")
 
-    if SENTRY_DSN:
-        sentry_sdk.init(
-            dsn=SENTRY_DSN,
-            integrations=[DjangoIntegration()],
-            environment=os.getenv("DJANGO_ENV", "prod"),  # dev/ prod 구분
-            release=SENTRY_RELEASE,  # 커밋 SHA 또는 태그와 매핑
-            # traces_sample_rate=1.0,  # 필요 시 APM 추적 옵션
-        )
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        environment=os.getenv("DJANGO_ENV", "prod"),  # dev/ prod 구분
+        release=SENTRY_RELEASE,  # 커밋 SHA 또는 태그와 매핑
+        # traces_sample_rate=1.0,  # 필요 시 APM 추적 옵션
+    )
 
 # ─── 환경변수 기반 설정 ────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-if-not-set")
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
 ROOT_URLCONF = "config.urls"
 
 # ─── S3(Object Storage) 환경변수 매핑 ───────────────────────
@@ -65,17 +65,37 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "apps.users",
+    "apps.notifications",
+    "apps.follows",
+    "apps.search",
     # Third party apps
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "corsheaders",
     "storages",
     # own
     "apps.marker",
     "apps.route",
     "apps.route_marker",
+    "channels",
+    # myapp
+    "ai_service",  # 요약/챗봇 기능을 담당할 앱
+    "drf_yasg",
 ]
 
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+    },
+}
+
+AUTH_USER_MODEL = "users.User"
 # ─── DEBUG 모드에서만 Debug Toolbar를 등록 ───────────────────
 if DEBUG:
     INSTALLED_APPS += [
@@ -159,23 +179,27 @@ if (
     and AWS_SECRET_ACCESS_KEY
     and AWS_STORAGE_BUCKET_NAME
 ):
-    # 파일 및 정적 파일 스토리지 백엔드
+    # ─── Static/Media ────────────────────────────────────────────────
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
     # S3 URL 설정
-    STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}"
+    STATIC_URL = "/static/"
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}"
 
-    # 로컬 정적 디렉토리는 개발용 유지
+    # 로컬 정적 디렉토리(개발용) 설정
     STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
+    MEDIA_ROOT = BASE_DIR / "media"
 else:
-    # 로컬 파일 시스템 사용
+    # ─── Static은 로컬에서 서빙, Media만 S3에 저장 ─────────────────
+    # 1) Static (로컬 디스크)
     STATIC_URL = "/static/"
     STATIC_ROOT = BASE_DIR / "staticfiles"
     STATICFILES_DIRS = [BASE_DIR / "static"]
-    MEDIA_URL = "/media/"
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    # 2) Media (업로드된 파일만 S3로)
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_MEDIA_LOCATION}"
     MEDIA_ROOT = BASE_DIR / "media"
 
 # ─── 기본 설정 ────────────────────────────────────────────
@@ -185,18 +209,55 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    # 스키마 자동생성 클래스
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # 인증 클래스 (AutoSchema 는 여기에 절대 포함하지 않습니다)
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    # 권한 설정
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
+    # 렌더러 클래스 추가
     "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
+        "config.renderers.CamelCaseJSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
 }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "LocalStoryMap API",
+    "DESCRIPTION": "local story map 서비스 API 문서",
+    "VERSION": "0.1.0",
+}
+
+from datetime import timedelta
+
+# 카카오 로그인 시에 JWT를 발급하기 위한 Simple JWT 설정
+SIMPLE_JWT = {
+    # 토큰 만료 기간(ex: Access 5분, Refresh 14일)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,  # Django의 SECRET_KEY를 그대로 사용
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+}
+
+KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
+KAKAO_REDIRECT_URI = os.getenv("KAKAO_REDIRECT_URI", "")
+
+GOOGLE_OAUTH2_CLIENT_ID = os.getenv("GOOGLE_OAUTH2_CLIENT_ID", "")
+GOOGLE_OAUTH2_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH2_CLIENT_SECRET", "")
+GOOGLE_OAUTH2_REDIRECT_URI = os.getenv(
+    "GOOGLE_OAUTH2_REDIRECT_URI", "http://127.0.0.1:8000/users/login/google/callback/"
+)
 
 # ─── 캐시 설정 ────────────────────────────────────────────
 CACHES = {
@@ -239,5 +300,34 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+    },
+}
+
+# Clova Studio 환경변수
+CLOVA_API_KEY = os.getenv("CLOVA_API_KEY", "")  # 반드시 값 있어야 함
+CLOVA_STUDIO_SKILL_ID = os.getenv("CLOVA_STUDIO_SKILL_ID", "")
+CLOVA_STUDIO_BASE_URL = os.getenv(
+    "CLOVA_STUDIO_BASE_URL", "https://clovastudio.stream.ntruss.com/testapp/v1"
+)
+
+# Clova Chat-completions URL 구성 (기본 형식)
+# 예) https://clovastudio.stream.ntruss.com/testapp/v1/chat-completions/HCX-003
+CLOVA_CHAT_COMPLETIONS_URL = (
+    f"{CLOVA_STUDIO_BASE_URL}/chat-completions/{CLOVA_STUDIO_SKILL_ID}"
+)
+
+# ─── drf-yasg (Swagger) 설정 ─────────────────────────────────────
+
+SWAGGER_SETTINGS = {
+    # 세션 인증(BasicAuth) UI 끄기
+    "USE_SESSION_AUTH": False,
+    # JWT Bearer 인증 정의
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "description": 'JWT 토큰을 "Bearer <your_token>" 형태로 입력하세요.',
+            "name": "Authorization",
+            "in": "header",
+        }
     },
 }
