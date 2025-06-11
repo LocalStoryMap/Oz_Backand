@@ -4,9 +4,11 @@ from django.db.models import Q
 from apps.route.models import Route
 
 from .models import RouteMarker
-from .serializers import (RouteMarkerBulkUpdateSerializer,
-                          RouteMarkerCreateSerializer,
-                          RouteMarkerUpdateSerializer)
+from .serializers import (
+    RouteMarkerBulkUpdateSerializer,
+    RouteMarkerCreateSerializer,
+    RouteMarkerUpdateSerializer,
+)
 
 
 class RouteMarkerService:

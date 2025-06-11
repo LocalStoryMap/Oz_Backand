@@ -6,9 +6,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import RouteMarker
-from .serializers import (RouteMarkerBulkUpdateSerializer,
-                          RouteMarkerCreateSerializer, RouteMarkerSerializer,
-                          RouteMarkerUpdateSerializer)
+from .serializers import (
+    RouteMarkerBulkUpdateSerializer,
+    RouteMarkerCreateSerializer,
+    RouteMarkerSerializer,
+    RouteMarkerUpdateSerializer,
+)
 from .services import RouteMarkerService
 
 

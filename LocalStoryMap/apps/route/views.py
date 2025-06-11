@@ -5,8 +5,11 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from .models import Route
-from .serializers import (RouteListFilterSerializer, RouteSerializer,
-                          RouteWithOrderedMarkersSerializer)
+from .serializers import (
+    RouteListFilterSerializer,
+    RouteSerializer,
+    RouteWithOrderedMarkersSerializer,
+)
 from .services import RouteService
 
 
