@@ -1,7 +1,12 @@
 from django.urls import path
 
-from .views import (GoogleLoginView, KakaoLoginView, LogoutView,
-                    UserDetailView, WithdrawView)
+from .views import (
+    GoogleLoginView,
+    KakaoLoginView,
+    LogoutView,
+    UserDetailView,
+    WithdrawView,
+)
 
 app_name = "users"
 
