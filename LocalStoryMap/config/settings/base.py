@@ -76,6 +76,10 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "storages",
+    # own
+    "apps.marker",
+    "apps.route",
+    "apps.route_marker",
     "channels",
     # myapp
     "ai_service",  # 요약/챗봇 기능을 담당할 앱
