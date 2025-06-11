@@ -50,19 +50,19 @@ urlpatterns = [
     path("api/", include(router.urls)),
     # ── Authentication ────────────────────────────────────────────
     path("api-auth/", include("rest_framework.urls")),
-    path("token/", obtain_auth_token, name="api_token_auth"),
+    path("api/token/", obtain_auth_token, name="api_token_auth"),
     # ── Application Endpoints ────────────────────────────────────
-    path("users/", include("apps.users.urls", namespace="users")),
+    path("api/users/", include("apps.users.urls", namespace="users")),
     path(
-        "notifications/",
+        "api/notifications/",
         include(
             "apps.notifications.urls",
         ),
     ),
-    path("follows/", include("apps.follows.urls")),
-    path("search/", include("apps.search.urls")),
+    path("api/follows/", include("apps.follows.urls")),
+    path("api/search/", include("apps.search.urls")),
     # ── AI Service Endpoints ─────────────────────────────────────
-    path("Ai/", include("ai_service.urls")),
+    path("api/Ai/", include("ai_service.urls")),
     # ── API Documentation ────────────────────────────────────────
     path(
         "swagger/",
