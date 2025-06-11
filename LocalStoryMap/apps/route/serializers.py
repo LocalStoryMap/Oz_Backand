@@ -1,26 +1,31 @@
 # apps/route/serializers.py
 from rest_framework import serializers
-from .models import Route
+
 from apps.marker.serializers import MarkerSerializer
+
+from .models import Route
+
 
 class RouteSerializer(serializers.ModelSerializer):
     # 경로 모델의 기본 시리얼라이저
-    user = serializers.StringRelatedField() # 사용자 정보를 닉네임 등으로 간단히 표시
-    marker_count = serializers.IntegerField(read_only=True) # @property 필드
+    user: serializers.StringRelatedField = (
+        serializers.StringRelatedField()
+    )  # 사용자 정보를 닉네임 등으로 간단히 표시
+    marker_count = serializers.IntegerField(read_only=True)  # @property 필드
 
     class Meta:
         model = Route
         fields = [
-            'id',
-            'user',
-            'name',
-            'description',
-            'created_at',
-            'updated_at',
-            'is_public',
-            'marker_count',
+            "id",
+            "user",
+            "name",
+            "description",
+            "created_at",
+            "updated_at",
+            "is_public",
+            "marker_count",
         ]
-        read_only_fields = ['id', 'user', 'created_at', 'updated_at', 'marker_count']
+        read_only_fields = ["id", "user", "created_at", "updated_at", "marker_count"]
 
 
 class RouteCreateSerializer(serializers.ModelSerializer):
@@ -29,16 +34,16 @@ class RouteCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
         fields = [
-            'name',
-            'description',
-            'is_public',
+            "name",
+            "description",
+            "is_public",
         ]
 
     def validate_name(self, value):
         if len(value.strip()) < 2:
             raise serializers.ValidationError("경로명은 최소 2글자 이상이어야 합니다.")
 
-        user = self.context['request'].user
+        user = self.context["request"].user
         if Route.objects.filter(user=user, name=value).exists():
             raise serializers.ValidationError("이미 같은 이름의 경로를 사용하고 있습니다.")
 
@@ -51,16 +56,16 @@ class RouteUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
         fields = [
-            'name',
-            'description',
-            'is_public',
+            "name",
+            "description",
+            "is_public",
         ]
 
     def validate_name(self, value):
         if len(value.strip()) < 2:
             raise serializers.ValidationError("경로명은 최소 2글자 이상이어야 합니다.")
 
-        user = self.context['request'].user
+        user = self.context["request"].user
         instance = self.instance
         # exclude를 사용해 원래 이름을 제외하고 검사
         if Route.objects.filter(user=user, name=value).exclude(pk=instance.pk).exists():
@@ -74,7 +79,7 @@ class OrderedMarkerSerializer(MarkerSerializer):
     sequence = serializers.IntegerField()
 
     class Meta(MarkerSerializer.Meta):
-        fields = MarkerSerializer.Meta.fields + ['sequence']
+        fields = MarkerSerializer.Meta.fields + ["sequence"]
 
 
 class RouteWithOrderedMarkersSerializer(RouteSerializer):
@@ -82,17 +87,19 @@ class RouteWithOrderedMarkersSerializer(RouteSerializer):
     markers = serializers.SerializerMethodField()
 
     class Meta(RouteSerializer.Meta):
-        fields = RouteSerializer.Meta.fields + ['markers']
+        fields = RouteSerializer.Meta.fields + ["markers"]
 
     def get_markers(self, obj):
         # 순서대로 정렬된 마커 목록을 반환합니다
-        ordered_route_markers = obj.route_markers.select_related('marker').order_by('sequence')
+        ordered_route_markers = obj.route_markers.select_related("marker").order_by(
+            "sequence"
+        )
 
         # Marker에 sequence 정보를 추가
         markers_with_sequence = []
         for rm in ordered_route_markers:
             marker_data = MarkerSerializer(rm.marker).data
-            marker_data['sequence'] = rm.sequence
+            marker_data["sequence"] = rm.sequence
             markers_with_sequence.append(marker_data)
 
         return markers_with_sequence

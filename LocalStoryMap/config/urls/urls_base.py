@@ -5,7 +5,6 @@ from django.urls import include, path
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import DefaultRouter
 
-
 # API 라우터 설정
 router = DefaultRouter()
 

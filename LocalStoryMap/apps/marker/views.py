@@ -1,9 +1,10 @@
 # apps/marker/views.py
-from rest_framework import viewsets, status
-from rest_framework.response import Response
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+
 from .models import Marker
-from .serializers import MarkerSerializer, MarkerListFilterSerializer
+from .serializers import MarkerListFilterSerializer, MarkerSerializer
 from .services import MarkerService
 
 
@@ -17,22 +18,22 @@ class MarkerViewSet(viewsets.ViewSet):
         filter_serializer = MarkerListFilterSerializer(data=request.query_params)
         filter_serializer.is_valid(raise_exception=True)
 
-        page = int(request.query_params.get('page', 1))
-        limit = int(request.query_params.get('limit', 20))
+        page = int(request.query_params.get("page", 1))
+        limit = int(request.query_params.get("limit", 20))
 
         result = MarkerService.list_markers(
-            filters=filter_serializer.validated_data,
-            page=page,
-            limit=limit
+            filters=filter_serializer.validated_data, page=page, limit=limit
         )
 
         serialized_data = MarkerSerializer(result["markers"], many=True).data
 
-        return Response({
-            "success": True,
-            "data": serialized_data,
-            "pagination": result["pagination"]
-        })
+        return Response(
+            {
+                "success": True,
+                "data": serialized_data,
+                "pagination": result["pagination"],
+            }
+        )
 
     def create(self, request):
         # POST /markers: 마커 생성
@@ -52,13 +53,10 @@ class MarkerViewSet(viewsets.ViewSet):
     def update(self, request, pk=None):
         # PUT /markers/{marker_id}: 특정 마커 수정
         marker = MarkerService.get_marker(marker_id=pk)
-
-        # 권한 체크 (소유자만 수정 가능하게)
-        if marker.user != request.user:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-
         try:
-            updated_marker = MarkerService.update_marker(marker=marker, data=request.data)
+            updated_marker = MarkerService.update_marker(
+                marker=marker, data=request.data
+            )
             serializer = MarkerSerializer(updated_marker)
             return Response(serializer.data)
         except Exception as e:
@@ -67,10 +65,5 @@ class MarkerViewSet(viewsets.ViewSet):
     def destroy(self, request, pk=None):
         # DELETE /markers/{marker_id}: 특정 마커 삭제
         marker = MarkerService.get_marker(marker_id=pk)
-
-        # 권한 체크 (소유자만 삭제 가능하게)
-        if marker.user != request.user:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-
         MarkerService.delete_marker(marker=marker)
         return Response(status=status.HTTP_204_NO_CONTENT)
