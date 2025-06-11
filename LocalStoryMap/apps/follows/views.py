@@ -42,6 +42,8 @@ class FollowViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Follow.objects.none()
         return Follow.objects.filter(follower=self.request.user)
 
     def perform_create(self, serializer):

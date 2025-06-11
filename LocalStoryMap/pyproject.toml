@@ -39,6 +39,7 @@ channels = "^4.2.2"
 channels-redis = "^4.2.1"
 pillow = "^11.2.1"
 haversine = "^2.9.0"
+websockets = "^15.0.1"
 
 [tool.poetry.group.dev.dependencies]
 django-extensions = "^4.1"
