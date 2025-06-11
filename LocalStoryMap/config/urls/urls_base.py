@@ -50,17 +50,17 @@ urlpatterns = [
     path("api/", include(router.urls)),
     # ── Authentication ────────────────────────────────────────────
     path("api-auth/", include("rest_framework.urls")),
-    path("token/", obtain_auth_token, name="api_token_auth"),
+    path("api/token/", obtain_auth_token, name="api_token_auth"),
     # ── Application Endpoints ────────────────────────────────────
-    path("users/", include("apps.users.urls", namespace="users")),
+    path("api/users/", include("apps.users.urls", namespace="users")),
     path(
-        "notifications/",
+        "api/notifications/",
         include(
             "apps.notifications.urls",
         ),
     ),
-    path("follows/", include("apps.follows.urls")),
-    path("search/", include("apps.search.urls")),
+    path("api/follows/", include("apps.follows.urls")),
+    path("api/search/", include("apps.search.urls")),
     # ── API Documentation ────────────────────────────────────────
     path(
         "swagger/",
@@ -68,6 +68,9 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    path("", include("apps.marker.urls")),
+    path("", include("apps.route.urls")),
+    path("api/", include("apps.route_marker.urls")),
     # ai_service 앱의 엔드 포인트
     path("api/", include("apps.ai_service.urls")),
     # 스토리 이미지 엔드 포인트
