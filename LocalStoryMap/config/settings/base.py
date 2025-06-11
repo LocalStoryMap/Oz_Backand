@@ -252,6 +252,8 @@ SIMPLE_JWT = {
 
 KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
 KAKAO_REDIRECT_URI = os.getenv("KAKAO_REDIRECT_URI", "")
+KAKAO_CLIENT_SECRET = os.getenv("KAKAO_CLIENT_SECRET")
+
 
 GOOGLE_OAUTH2_CLIENT_ID = os.getenv("GOOGLE_OAUTH2_CLIENT_ID", "")
 GOOGLE_OAUTH2_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH2_CLIENT_SECRET", "")
@@ -330,4 +332,6 @@ SWAGGER_SETTINGS = {
             "in": "header",
         }
     },
+    # Swagger UI가 기본으로 호출할 API 경로 접두사
+    "DEFAULT_API_URL": "/api",
 }
