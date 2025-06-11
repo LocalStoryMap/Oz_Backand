@@ -71,9 +71,10 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "storages",
-    # myapp
-    "ai_service",  # 요약/챗봇 기능을 담당할 앱
     "drf_yasg",
+    # myapp
+    "apps.ai_service",  # 요약/챗봇 기능을 담당할 앱
+    "apps.storyimage", # 스토리 이미지 앱
 ]
 
 AUTH_USER_MODEL = "users.User"

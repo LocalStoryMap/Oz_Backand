@@ -7,6 +7,8 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "*"]
 # 개발용 URL 설정
 ROOT_URLCONF = "config.urls.urls_dev"
 
+MEDIA_URL = 'http://localhost:8000/media/'
+
 # DRF 기본 설정
 REST_FRAMEWORK.update(
     {
