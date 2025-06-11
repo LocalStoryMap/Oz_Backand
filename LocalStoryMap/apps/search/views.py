@@ -29,7 +29,7 @@ class SearchHistoryViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
+        if getattr(self, "swagger_fake_view", False):
             return SearchHistory.objects.none()
         return SearchHistory.objects.filter(user=self.request.user)
 
