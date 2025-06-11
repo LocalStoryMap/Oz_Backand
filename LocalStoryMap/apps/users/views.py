@@ -1,15 +1,17 @@
-# apps/users/views.py
+from urllib.parse import unquote
+
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import permissions, status
+from rest_framework import generics, permissions, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
 from .serializers import UserSerializer
-from .utils import KakaoAPI
+from .utils import KakaoAPI, get_google_user_info
 
 
 class KakaoLoginView(APIView):
@@ -92,3 +94,216 @@ class KakaoLoginView(APIView):
                 {"detail": f"카카오 로그인 중 오류가 발생했습니다. {str(e)}"},
                 status=400,
             )
+
+
+class GoogleLoginView(APIView):
+    @swagger_auto_schema(
+        operation_summary="Google 소셜 로그인 (인가 코드 방식)",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "code": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="Google OAuth2 인가 코드"
+                ),
+            },
+            required=["code"],
+        ),
+        responses={200: openapi.Response(description="JWT 토큰")},
+    )
+    def post(self, request):
+        code = request.data.get("code", "")
+        if not code:
+            return Response(
+                {"error": "code(인가 코드)를 전달해주세요."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        code = unquote(code)
+
+        # 1) 구글에서 토큰 교환 & 유저 정보 조회
+        try:
+            user_info = get_google_user_info(code)
+        except Exception as e:
+            return Response(
+                {"error": "구글 토큰 요청 또는 사용자 정보 조회 실패", "details": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        google_sub = user_info.get("sub")
+        email = user_info.get("email")
+        name = user_info.get("name")
+        picture = user_info.get("picture", "")
+
+        # 2) DB 에 이미 provider="google", social_id=google_sub 으로 가입된 유저가 있는지 찾기
+        user = User.objects.filter(provider="google", social_id=google_sub).first()
+        if user:
+            # (A) 완전 처음 로그인은 아님
+            user.last_login = timezone.now()
+            user.save(update_fields=["last_login"])
+            created = False
+        else:
+            # 3) 아직 google social_id 로는 없는 유저 → 이메일 기준으로 있던 유저인지 다시 확인
+            user = User.objects.filter(email=email).first()
+            if user:
+                # (B) 카카오 등으로 이미 가입된 같은 이메일 계정이 있다면, 해당 레코드를 “구글”로 업데이트
+                user.provider = "google"
+                user.social_id = google_sub
+                user.profile_image = picture
+                user.last_login = timezone.now()
+                user.save(
+                    update_fields=[
+                        "provider",
+                        "social_id",
+                        "profile_image",
+                        "last_login",
+                    ]
+                )
+                created = False
+            else:
+                # (C) 완전 신규 이메일
+                user = User.objects.create(
+                    email=email,
+                    username=email.split("@")[0],
+                    first_name=name,
+                    provider="google",
+                    social_id=google_sub,
+                    profile_image=picture,
+                )
+                created = True
+
+        # 4) JWT 발급 및 응답
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": UserSerializer(user).data,
+                "is_new_user": created,
+            }
+        )
+
+
+class LogoutView(APIView):
+    """
+    1) 클라이언트로부터 Refresh Token을 받아 블랙리스트에 등록 → 로그아웃 처리
+    2) 로그인 상태에서만 호출 가능
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="로그아웃",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["refresh"],
+            properties={
+                "refresh": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="블랙리스트 처리할 Refresh Token"
+                ),
+            },
+        ),
+        responses={
+            205: openapi.Response(description="로그아웃 성공 (Reset Content)"),
+            400: openapi.Response(description="잘못된 요청"),
+        },
+    )
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"detail": "refresh 토큰을 전달해주세요."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # RefreshToken 객체 생성 → blacklist() 호출
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except Exception as e:
+            return Response(
+                {"detail": "토큰 블랙리스트 처리 실패", "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 205 Reset Content: 요청을 성공적으로 처리했고, 더 이상 해당 토큰을 사용할 수 없음을 의미
+        return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+class WithdrawView(APIView):
+    """
+    회원탈퇴 API
+    - 인증된 유저만 호출할 수 있습니다.
+    - DELETE 메서드로 호출 시, 해당 user 인스턴스를 삭제합니다.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="회원 탈퇴",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "refresh": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="리프레시 토큰"
+                ),
+            },
+            required=[],
+        ),
+        responses={
+            204: openapi.Response(description="회원 탈퇴 성공"),
+            400: openapi.Response(description="요청 형식이 잘못된 경우"),
+        },
+    )
+    def delete(self, request):
+        user = request.user
+        # 리프레시 토큰을 블랙리스트에 넣움
+        refresh_token = request.data.get("refresh")
+        if refresh_token:
+            RefreshToken(refresh_token).blacklist()
+        # 2) 사용자 계정 삭제
+        user.delete()
+        # 3) 204 No Content 응답
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserDetailView(generics.RetrieveUpdateAPIView):
+    """
+    GET    /users/me/   → 내 정보 조회
+    PUT    /users/me/   → 내 정보 전체 수정
+    PATCH  /users/me/   → 내 정보 일부 수정
+    DELETE /users/me/   → 회원 탈퇴
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
+    parser_classes = [MultiPartParser, FormParser]  # multipart/form-data 지원
+
+    def get_object(self):
+        # 인증된 사용자 자신의 레코드만 반환
+        return self.request.user
+
+    @swagger_auto_schema(
+        operation_summary="내 정보 조회",
+        responses={
+            200: openapi.Response("내 정보 조회 성공", UserSerializer),
+        },
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="내 정보 전체 수정 (PUT)",
+        request_body=UserSerializer,
+        responses={
+            200: openapi.Response("내 정보 수정 성공", UserSerializer),
+        },
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="내 정보 일부 수정 (PATCH)",
+        request_body=UserSerializer,
+        responses={
+            200: openapi.Response("내 정보 부분 수정 성공", UserSerializer),
+        },
+    )
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)

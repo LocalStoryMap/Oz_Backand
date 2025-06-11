@@ -9,21 +9,21 @@ env_path = BASE_DIR / ".env"
 if env_path.exists():
     load_dotenv(env_path)
 
-    # ─── Sentry SDK 초기화 ───────────────────────────────────────
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
+# ─── Sentry SDK 초기화 ───────────────────────────────────────
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
-    SENTRY_DSN = os.getenv("SENTRY_DSN")
-    SENTRY_RELEASE = os.getenv("SENTRY_RELEASE")
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+SENTRY_RELEASE = os.getenv("SENTRY_RELEASE")
 
-    if SENTRY_DSN:
-        sentry_sdk.init(
-            dsn=SENTRY_DSN,
-            integrations=[DjangoIntegration()],
-            environment=os.getenv("DJANGO_ENV", "prod"),  # dev/ prod 구분
-            release=SENTRY_RELEASE,  # 커밋 SHA 또는 태그와 매핑
-            # traces_sample_rate=1.0,  # 필요 시 APM 추적 옵션
-        )
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        environment=os.getenv("DJANGO_ENV", "prod"),  # dev/ prod 구분
+        release=SENTRY_RELEASE,  # 커밋 SHA 또는 태그와 매핑
+        # traces_sample_rate=1.0,  # 필요 시 APM 추적 옵션
+    )
 
 # ─── 환경변수 기반 설정 ────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-if-not-set")
@@ -66,16 +66,31 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.users",
+    "apps.notifications",
+    "apps.follows",
+    "apps.search",
     # Third party apps
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
+    "drf_spectacular",
     "corsheaders",
     "storages",
+    "channels",
     "drf_yasg",
     # myapp
     "apps.ai_service",  # 요약/챗봇 기능을 담당할 앱
     "apps.storyimage", # 스토리 이미지 앱
 ]
+
+ASGI_APPLICATION = "config.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+    },
+}
 
 AUTH_USER_MODEL = "users.User"
 # ─── DEBUG 모드에서만 Debug Toolbar를 등록 ───────────────────
@@ -191,19 +206,30 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    # 스키마 자동생성 클래스
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # 인증 클래스 (AutoSchema 는 여기에 절대 포함하지 않습니다)
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
+    # 권한 설정
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
         "rest_framework.permissions.IsAuthenticated",
     ],
+    # 렌더러 클래스 추가
     "DEFAULT_RENDERER_CLASSES": [
         "config.renderers.CamelCaseJSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "LocalStoryMap API",
+    "DESCRIPTION": "local story map 서비스 API 문서",
+    "VERSION": "0.1.0",
 }
 
 from datetime import timedelta
@@ -223,6 +249,13 @@ SIMPLE_JWT = {
 
 KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "")
 KAKAO_REDIRECT_URI = os.getenv("KAKAO_REDIRECT_URI", "")
+
+GOOGLE_OAUTH2_CLIENT_ID = os.getenv("GOOGLE_OAUTH2_CLIENT_ID", "")
+GOOGLE_OAUTH2_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH2_CLIENT_SECRET", "")
+GOOGLE_OAUTH2_REDIRECT_URI = os.getenv(
+    "GOOGLE_OAUTH2_REDIRECT_URI", "http://127.0.0.1:8000/users/login/google/callback/"
+)
+
 # ─── 캐시 설정 ────────────────────────────────────────────
 CACHES = {
     "default": {
@@ -279,3 +312,19 @@ CLOVA_STUDIO_BASE_URL = os.getenv(
 CLOVA_CHAT_COMPLETIONS_URL = (
     f"{CLOVA_STUDIO_BASE_URL}/chat-completions/{CLOVA_STUDIO_SKILL_ID}"
 )
+
+# ─── drf-yasg (Swagger) 설정 ─────────────────────────────────────
+
+SWAGGER_SETTINGS = {
+    # 세션 인증(BasicAuth) UI 끄기
+    "USE_SESSION_AUTH": False,
+    # JWT Bearer 인증 정의
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "description": 'JWT 토큰을 "Bearer <your_token>" 형태로 입력하세요.',
+            "name": "Authorization",
+            "in": "header",
+        }
+    },
+}
