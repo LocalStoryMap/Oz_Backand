@@ -76,6 +76,8 @@ urlpatterns = [
     path("api/ai/", include("apps.ai_service.urls")),
     # 스토리 이미지 엔드 포인트
     path("api/", include("apps.storyimage.urls")),
+
+    path("api/subscribes/", include("apps.subscribes.urls", namespace="subscribes")),
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────

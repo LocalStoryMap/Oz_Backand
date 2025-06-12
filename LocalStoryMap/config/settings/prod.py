@@ -24,8 +24,6 @@ ALLOWED_HOSTS = [
     "localstorymap.com",
     "www.localstorymap.com",
     "127.0.0.1",
-    "localhost",
-    "223.130.152.69",
 ]
 
 USE_X_FORWARDED_HOST = True
