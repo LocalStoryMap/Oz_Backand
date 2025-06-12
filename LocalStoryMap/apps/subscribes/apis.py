@@ -1,6 +1,5 @@
 import logging
 from datetime import timedelta
-from typing import Any, Dict, Optional
 
 import requests
 from django.conf import settings
@@ -18,105 +17,19 @@ from .serializers import SubscribeInputSerializer, SubscribeSerializer
 logger = logging.getLogger(__name__)
 
 
-class IamportAPIError(Exception):
-    """아임포트 API 관련 에러"""
-
-    def __init__(
-        self,
-        message: str,
-        status_code: Optional[int] = None,
-        response_data: Any = None,
-    ):
-        super().__init__(message)
-        self.status_code = status_code
-        self.response_data = response_data
-
-
 class SubscribeListCreateAPIView(APIView):
     # GET  /subscribes/ : 내 구독 조회 (리스트)
     # POST /subscribes/ : 구독 생성 또는 갱신 (입력+결제 검증)
 
     permission_classes = [permissions.IsAuthenticated]
 
-    def _verify_payment(self, imp_uid: str, merchant_uid: str) -> Dict[str, Any]:
-        """결제 검증을 수행합니다."""
-        try:
-            # 1) 토큰 발급
-            token_resp = requests.post(
-                "https://api.iamport.kr/users/getToken",
-                json={
-                    "imp_key": settings.IMP_KEY,
-                    "imp_secret": settings.IMP_SECRET,
-                },
-                timeout=5,
-            )
-            token_resp.raise_for_status()
-            access_token = token_resp.json()["response"]["access_token"]
-
-            # 2) 결제 내역 조회
-            pay_resp = requests.get(
-                f"https://api.iamport.kr/payments/{imp_uid}",
-                headers={"Authorization": f"Bearer {access_token}"},
-                timeout=5,
-            )
-            pay_resp.raise_for_status()
-            payment = pay_resp.json()["response"]
-
-            # 3) 응답 검증
-            if payment.get("status") != "paid":
-                raise IamportAPIError(
-                    f"결제가 완료되지 않았습니다. (상태: {payment.get('status')})",
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # 4) 금액 검증
-            amount = int(payment.get("amount", 0))
-            if amount != settings.SINGLE_PLAN_PRICE:
-                raise IamportAPIError(
-                    f"결제 금액이 일치하지 않습니다. (기대: {settings.SINGLE_PLAN_PRICE}, 실제: {amount})",
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # 5) merchant_uid 검증
-            if payment.get("merchant_uid") != merchant_uid:
-                raise IamportAPIError(
-                    "merchant_uid가 일치하지 않습니다.",
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-
-            return payment
-
-        except requests.exceptions.Timeout:
-            logger.error(f"아임포트 API 타임아웃: imp_uid={imp_uid}")
-            raise IamportAPIError(
-                "결제 검증 중 시간 초과가 발생했습니다.",
-                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            )
-        except requests.exceptions.ConnectionError:
-            logger.error(f"아임포트 API 연결 실패: imp_uid={imp_uid}")
-            raise IamportAPIError(
-                "결제 검증 중 연결 오류가 발생했습니다.",
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-        except requests.exceptions.RequestException as e:
-            logger.error(f"아임포트 API 호출 실패: imp_uid={imp_uid}, error={e}")
-            resp = getattr(e, "response", None)
-            code = (
-                resp.status_code
-                if resp is not None
-                else status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            raise IamportAPIError(
-                f"결제 검증 중 오류가 발생했습니다: {e}",
-                status_code=code,
-            )
-
     def get(self, request: Request) -> Response:
         user_id = request.user.id
         if user_id is None:
             raise NotAuthenticated("인증된 사용자만 접근 가능합니다")
         try:
-            subs = Subscribe.objects.filter(user_id=user_id)
+            # 활성 구독만 조회
+            subs = Subscribe.objects.filter(user_id=user_id, is_active=True)
             return Response(SubscribeSerializer(subs, many=True).data)
         except Exception as e:
             logger.error(f"구독 목록 조회 실패: user_id={user_id}, error={e}")
@@ -129,25 +42,13 @@ class SubscribeListCreateAPIView(APIView):
         user_id = request.user.id
         if user_id is None:
             raise NotAuthenticated("인증된 사용자만 접근 가능합니다")
-        # 입력 검증
-        in_ser = SubscribeInputSerializer(data=request.data)
-        in_ser.is_valid(raise_exception=True)
 
-        # 결제 검증
         try:
-            self._verify_payment(
-                in_ser.validated_data["imp_uid"],
-                in_ser.validated_data["merchant_uid"],
-            )
-        except IamportAPIError as e:
-            logger.error(f"결제 검증 실패: {e}")
-            return Response(
-                {"error": str(e)},
-                status=e.status_code or status.HTTP_400_BAD_REQUEST,
-            )
+            # 시리얼라이저에서 모든 검증 수행
+            in_ser = SubscribeInputSerializer(data=request.data)
+            in_ser.is_valid(raise_exception=True)
 
-        # 구독 생성/갱신
-        try:
+            # 구독 생성/갱신
             defaults = {
                 "imp_uid": in_ser.validated_data["imp_uid"],
                 "merchant_uid": in_ser.validated_data["merchant_uid"],
@@ -163,25 +64,32 @@ class SubscribeListCreateAPIView(APIView):
                 f"구독 {'생성' if created else '갱신'} 성공: "
                 f"user_id={user_id}, subscribe_id={sub.subscribe_id}"
             )
-            out_ser = SubscribeSerializer(sub)
-            return Response(out_ser.data, status=status.HTTP_201_CREATED)
+
+            return Response(
+                SubscribeSerializer(sub).data, status=status.HTTP_201_CREATED
+            )
 
         except Exception as e:
             logger.error(
-                f"구독 생성/갱신 실패: user_id={user_id}, imp_uid={in_ser.validated_data['imp_uid']}, error={e}"
+                f"구독 생성/갱신 실패: user_id={user_id}, "
+                f"imp_uid={request.data.get('imp_uid')}, error={e}"
             )
             # 결제는 성공했지만 구독 생성에 실패한 경우, 환불 처리
             try:
-                self._refund_payment(in_ser.validated_data["imp_uid"])
-            except IamportAPIError as refund_error:
+                self._refund_payment(request.data.get("imp_uid"))
+            except Exception as refund_error:
                 logger.error(f"환불 처리 실패: {refund_error}")
             return Response(
                 {"error": "구독 처리 중 오류가 발생했습니다. 결제는 환불되었습니다."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    def _refund_payment(self, imp_uid: str) -> None:
+    def _refund_payment(self, imp_uid: str | None) -> None:
         """결제를 환불합니다."""
+        if imp_uid is None:
+            logger.error("환불 실패: imp_uid가 None입니다")
+            return
+
         try:
             token_resp = requests.post(
                 "https://api.iamport.kr/users/getToken",
@@ -208,10 +116,7 @@ class SubscribeListCreateAPIView(APIView):
                 if resp is not None
                 else status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            raise IamportAPIError(
-                f"환불 처리 중 오류가 발생했습니다: {e}",
-                status_code=code,
-            )
+            raise Exception(f"환불 처리 중 오류가 발생했습니다: {e}")
 
 
 class SubscribeDetailAPIView(APIView):
@@ -225,13 +130,16 @@ class SubscribeDetailAPIView(APIView):
         if user_id is None:
             raise NotAuthenticated("인증된 사용자만 접근 가능합니다")
         try:
+            # 활성 구독만 조회
             return Subscribe.objects.get(
                 subscribe_id=subscribe_id,
                 user_id=user_id,
+                is_active=True,  # 활성 구독만 조회
             )
         except Subscribe.DoesNotExist:
+            # 구독이 없거나 비활성화된 경우
             logger.warning(
-                f"존재하지 않는 구독 접근 시도: user_id={user_id}, subscribe_id={subscribe_id}"
+                f"존재하지 않거나 비활성화된 구독 접근 시도: user_id={user_id}, subscribe_id={subscribe_id}"
             )
             raise Http404("구독을 찾을 수 없습니다")
 
@@ -250,94 +158,12 @@ class SubscribeDetailAPIView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    def _cancel_payment(self, imp_uid: str, merchant_uid: str) -> None:
-        """결제를 취소합니다."""
-        try:
-            token_resp = requests.post(
-                "https://api.iamport.kr/users/getToken",
-                json={"imp_key": settings.IMP_KEY, "imp_secret": settings.IMP_SECRET},
-                timeout=5,
-            )
-            token_resp.raise_for_status()
-            access_token = token_resp.json()["response"]["access_token"]
-
-            cancel_resp = requests.post(
-                "https://api.iamport.kr/payments/cancel",
-                json={"imp_uid": imp_uid, "merchant_uid": merchant_uid},
-                headers={"Authorization": f"Bearer {access_token}"},
-                timeout=5,
-            )
-            cancel_resp.raise_for_status()
-            logger.info(f"결제 취소 성공: imp_uid={imp_uid}")
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"결제 취소 실패: imp_uid={imp_uid}, error={e}")
-            resp = getattr(e, "response", None)
-            code = (
-                resp.status_code
-                if resp is not None
-                else status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            raise IamportAPIError(
-                f"결제 취소 중 오류가 발생했습니다: {e}",
-                status_code=code,
-            )
-
-    def _unschedule_payment(self, customer_uid: str) -> None:
-        """정기결제 예약을 해제합니다."""
-        try:
-            token_resp = requests.post(
-                "https://api.iamport.kr/users/getToken",
-                json={"imp_key": settings.IMP_KEY, "imp_secret": settings.IMP_SECRET},
-                timeout=5,
-            )
-            token_resp.raise_for_status()
-            access_token = token_resp.json()["response"]["access_token"]
-
-            unschedule_resp = requests.post(
-                "https://api.iamport.kr/subscribe/payments/unschedule",
-                json={"customer_uid": customer_uid},
-                headers={"Authorization": f"Bearer {access_token}"},
-                timeout=5,
-            )
-            unschedule_resp.raise_for_status()
-            logger.info(f"정기결제 예약 해제 성공: customer_uid={customer_uid}")
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"정기결제 예약 해제 실패: customer_uid={customer_uid}, error={e}")
-            resp = getattr(e, "response", None)
-            code = (
-                resp.status_code
-                if resp is not None
-                else status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            raise IamportAPIError(
-                f"정기결제 예약 해제 중 오류가 발생했습니다: {e}",
-                status_code=code,
-            )
-
     def delete(self, request: Request, subscribe_id: int) -> Response:
         try:
+            # 활성 구독만 조회 (이미 비활성화된 구독은 404)
             sub = self.get_object(subscribe_id)
 
-            # 1) 결제 취소
-            try:
-                self._cancel_payment(sub.imp_uid, sub.merchant_uid)
-            except IamportAPIError as e:
-                logger.error(f"결제 취소 실패: {e}")
-                return Response(
-                    {"error": str(e)},
-                    status=e.status_code or status.HTTP_400_BAD_REQUEST,
-                )
-
-            # 2) 정기결제 예약 해제
-            if hasattr(sub, "customer_uid"):
-                try:
-                    self._unschedule_payment(sub.customer_uid)
-                except IamportAPIError as e:
-                    logger.error(f"정기결제 예약 해제 실패: {e}")
-
-            # 3) 구독 상태 업데이트
+            # 구독 상태 업데이트
             try:
                 sub.is_active = False
                 sub.save(update_fields=["is_active"])
