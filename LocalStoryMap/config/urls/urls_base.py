@@ -74,6 +74,7 @@ urlpatterns = [
     path("", include("apps.marker.urls")),
     path("", include("apps.route.urls")),
     path("api/", include("apps.route_marker.urls")),
+    path("api/subscribes/", include("apps.subscribes.urls", namespace="subscribes")),
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────
