@@ -1,8 +1,10 @@
 from rest_framework import serializers
 
-from .models import StoryImage
 # Story 모델을 명시적으로 import 합니다.
 from apps.storyimage.models import Story
+
+from .models import StoryImage
+
 
 class ImageSerializer(serializers.ModelSerializer):
     # story_id 필드에 타입 애너테이션을 추가하고, 직접 import한 Story 모델을 사용
