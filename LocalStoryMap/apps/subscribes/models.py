@@ -7,7 +7,6 @@ from apps.users.models import User
 
 
 class Subscribe(models.Model):
-
     subscribe_id: int = models.BigAutoField(primary_key=True, help_text="구독 고유 ID")
     user: User = models.ForeignKey(
         User,

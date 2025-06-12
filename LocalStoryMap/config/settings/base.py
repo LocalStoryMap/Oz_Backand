@@ -314,11 +314,11 @@ SINGLE_PLAN_DURATION = int(os.getenv("SINGLE_PLAN_DURATION", "30"))  # 기본 30
 # 매일 자정(00:00)에 `expire_subscriptions` 명령을 호출,
 # 배포 서버에서 python manage.py crontab add 한 번 실행하시면 매일 자정에 expire_subscriptions 커맨드가 돌아갑니다
 CRONJOBS = [
-    ('0 0 * * *', 'django.core.management.call_command', ['expire_subscriptions']),
+    ("0 0 * * *", "django.core.management.call_command", ["expire_subscriptions"]),
 ]
 # PORTONE 키
-IMP_KEY = os.getenv('IMP_KEY')
-IMP_SECRET = os.getenv('IMP_SECRET')
+IMP_KEY = os.getenv("IMP_KEY")
+IMP_SECRET = os.getenv("IMP_SECRET")
 
 # Clova Studio 환경변수
 CLOVA_API_KEY = os.getenv("CLOVA_API_KEY", "")  # 반드시 값 있어야 함
