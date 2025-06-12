@@ -73,7 +73,7 @@ urlpatterns = [
     path("", include("apps.route.urls")),
     path("api/", include("apps.route_marker.urls")),
     # ai_service 앱의 엔드 포인트
-    path("api/", include("apps.ai_service.urls")),
+    path("api/ai/", include("apps.ai_service.urls")),
     # 스토리 이미지 엔드 포인트
     path("api/", include("apps.storyimage.urls")),
 ]
