@@ -3,10 +3,13 @@
 import os
 import sys
 
+from dotenv import load_dotenv
+
+load_dotenv()  # .env 환경변수 로드
+
 
 def main():
     """Run administrative tasks."""
-    # 환경변수가 설정돼 있으면 그 값을, 없으면 dev를 기본값으로 사용
     os.environ["DJANGO_SETTINGS_MODULE"] = os.environ.get(
         "DJANGO_SETTINGS_MODULE",
         "config.settings.dev",
