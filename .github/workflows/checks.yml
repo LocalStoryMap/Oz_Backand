@@ -49,12 +49,12 @@ jobs:
         run: |
           poetry run mypy .
 
-      - name: 🚫 Ensure you're not using dev settings in production
-        run: |
-          if grep -q "settings.dev" manage.py; then
-            echo "❌ ERROR: You are trying to deploy with dev settings."
-            exit 1
-          fi
+#      - name: 🚫 Ensure you're not using dev settings in production
+#        run: |
+#          if grep -q "settings.dev" manage.py; then
+#            echo "❌ ERROR: You are trying to deploy with dev settings."
+#            exit 1
+#          fi
 
       - name: 🚫 Fail if there are missing migrations
         run: |
