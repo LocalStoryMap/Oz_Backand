@@ -82,7 +82,7 @@ INSTALLED_APPS = [
     "apps.route_marker",
     "channels",
     # myapp
-    "ai_service",  # 요약/챗봇 기능을 담당할 앱
+    "apps.ai_service",  # 요약/챗봇 기능을 담당할 앱
     "drf_yasg",
     "apps.subscribes",
     "django_crontab",
