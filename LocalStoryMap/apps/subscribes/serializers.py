@@ -11,8 +11,8 @@ class SubscribeInputSerializer(serializers.Serializer):
     # POST /subscribes/ 입력 스펙
     # imp_uid · merchant_uid 검증 포함
 
-    imp_uid: str = serializers.CharField(max_length=255)
-    merchant_uid: str = serializers.CharField(max_length=100)
+    imp_uid = serializers.CharField(max_length=255)
+    merchant_uid = serializers.CharField(max_length=100)
 
     def validate(self, data: Dict[str, str]) -> Dict[str, str]:
         imp_uid: str = data["imp_uid"]
@@ -56,7 +56,7 @@ class SubscribeInputSerializer(serializers.Serializer):
 class SubscribeSerializer(serializers.ModelSerializer):
     # GET 응답 스펙
 
-    user_id: int = serializers.IntegerField(source="user.id", read_only=True)
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
 
     class Meta:
         model = Subscribe
