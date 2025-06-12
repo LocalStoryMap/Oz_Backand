@@ -15,14 +15,12 @@ ROOT_URLCONF = "config.urls.urls_prod"
 
 # ---CORS 설정 (프로덕션용)---------------------------------------
 CORS_ALLOWED_ORIGINS = [
-    "https://localstorymap.com",
     "https://www.localstorymap.com",
 ]
 
 # ---도메인 설정-------------------------------------------------
 ALLOWED_HOSTS = [
     "localstorymap.com",
-    "www.localstorymap.com",
     "127.0.0.1",
 ]
 
