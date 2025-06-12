@@ -7,6 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+
     steps:
       # 1) Checkout the code so that github.ref is set
       - name: Checkout code
@@ -45,6 +48,8 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             set -e
+            # prod 환경 설정 강제 주입
+            export DJANGO_SETTINGS_MODULE=config.settings.prod
             echo "🚀 배포 시작..."
 
             # ─── 2-a) 브랜치 추출 ────────────────────────────────
