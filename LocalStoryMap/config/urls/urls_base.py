@@ -63,7 +63,7 @@ urlpatterns = [
     path("api/follows/", include("apps.follows.urls")),
     path("api/search/", include("apps.search.urls")),
     # ── AI Service Endpoints ─────────────────────────────────────
-    path("api/Ai/", include("ai_service.urls")),
+    path("api/ai/", include("apps.ai_service.urls")),
     # ── API Documentation ────────────────────────────────────────
     path(
         "swagger/",
