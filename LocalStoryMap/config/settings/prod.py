@@ -21,12 +21,14 @@ CORS_ALLOWED_ORIGINS = [
 
 # ---도메인 설정-------------------------------------------------
 ALLOWED_HOSTS = [
-    "223.130.152.69",
-    "localhost",
-    "127.0.0.1",
     "localstorymap.com",
     "www.localstorymap.com",
+    "127.0.0.1",
+    "localhost",
+    "223.130.152.69",
 ]
+
+USE_X_FORWARDED_HOST = True
 
 # ---PostgreSQL 설정---------------------------------------------
 DATABASES = {
