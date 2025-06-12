@@ -1,4 +1,5 @@
 import os
+
 from django.core.wsgi import get_wsgi_application
 
 # 환경변수가 설정돼 있으면 그 값을, 없으면 dev를 기본값으로 사용

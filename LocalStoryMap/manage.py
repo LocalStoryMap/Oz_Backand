@@ -3,6 +3,7 @@
 import os
 import sys
 
+
 def main():
     """Run administrative tasks."""
     # 환경변수가 설정돼 있으면 그 값을, 없으면 dev를 기본값으로 사용
@@ -19,6 +20,7 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     execute_from_command_line(sys.argv)
+
 
 if __name__ == "__main__":
     main()
