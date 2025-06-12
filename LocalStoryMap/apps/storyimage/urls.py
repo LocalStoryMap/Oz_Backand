@@ -7,7 +7,7 @@ from .views import StoryImageViewSet
 # 기본 이미지 CRUD
 router = DefaultRouter()
 # router.register(r'stories', StoryViewSet, basename='story')
-router.register(r'images', StoryImageViewSet, basename='image')
+router.register(r"images", StoryImageViewSet, basename="image")
 # → /api/images/, /api/images/{pk}/
 
 # stories/{pk}/images
@@ -16,6 +16,6 @@ router.register(r'images', StoryImageViewSet, basename='image')
 # → /api/stories/{story_pk}/images/, /api/stories/{story_pk}/images/{pk}/
 
 urlpatterns = [
-    path("", include(router.urls)),    # /images, /images/{pk}
+    path("", include(router.urls)),  # /images, /images/{pk}
     # path("", include(nested.urls)),    # /stories/{pk}/images, /stories/{pk}/images/{pk}
 ]
