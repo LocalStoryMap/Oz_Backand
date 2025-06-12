@@ -62,8 +62,6 @@ urlpatterns = [
     ),
     path("api/follows/", include("apps.follows.urls")),
     path("api/search/", include("apps.search.urls")),
-    # ── AI Service Endpoints ─────────────────────────────────────
-    path("api/Ai/", include("ai_service.urls")),
     # ── API Documentation ────────────────────────────────────────
     path(
         "swagger/",
@@ -74,6 +72,10 @@ urlpatterns = [
     path("", include("apps.marker.urls")),
     path("", include("apps.route.urls")),
     path("api/", include("apps.route_marker.urls")),
+    # ai_service 앱의 엔드 포인트
+    path("api/ai/", include("apps.ai_service.urls")),
+    # 스토리 이미지 엔드 포인트
+    path("api/", include("apps.storyimage.urls")),
     path("api/subscribes/", include("apps.subscribes.urls", namespace="subscribes")),
 ]
 
