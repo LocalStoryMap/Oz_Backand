@@ -52,11 +52,7 @@ class Marker(models.Model):
         ("cafe", "카페"),
     ]
     layer = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        choices=LAYER_CHOICES,
-        verbose_name="레이어"
+        max_length=20, blank=True, null=True, choices=LAYER_CHOICES, verbose_name="레이어"
     )
 
     class Meta:
