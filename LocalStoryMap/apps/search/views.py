@@ -15,6 +15,7 @@ class SearchHistoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
+        tags=["search"],
         operation_summary="검색 기록 목록 조회",
         operation_description="현재 사용자의 검색 기록 목록을 조회합니다.",
     )
@@ -22,6 +23,7 @@ class SearchHistoryViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
+        tags=["search"],
         operation_summary="검색 기록 생성",
         operation_description="현재 사용자에 대한 새로운 검색 기록을 생성합니다.",
     )
