@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "apps.ai_service",  # 요약/챗봇 기능을 담당할 앱
     "apps.storyimage",  # 스토리 이미지 앱
     "apps.subscribes",
+    "apps.paymenthistory",  # 결제 이력 앱
     "django_crontab",
 ]
 
