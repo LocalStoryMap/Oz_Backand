@@ -70,8 +70,8 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
-    path("", include("apps.marker.urls")),
-    path("", include("apps.route.urls")),
+    path("api/", include("apps.marker.urls")),
+    path("api/", include("apps.route.urls")),
     path("api/", include("apps.route_marker.urls")),
 ]
 
