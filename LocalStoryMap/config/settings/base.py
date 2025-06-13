@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     "apps.storyimage",  # 스토리 이미지 앱
     "apps.subscribes",
     "django_crontab",
+    "apps.paymenthistory",
 ]
 
 ASGI_APPLICATION = "config.asgi.application"
