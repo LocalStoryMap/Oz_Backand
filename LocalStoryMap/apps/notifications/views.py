@@ -55,7 +55,10 @@ class NotificationSettingViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
-        return NotificationSetting.objects.filter(user=self.request.user)
+        user = self.request.user
+        if not user.is_authenticated:
+            return NotificationSetting.objects.none()
+        return NotificationSetting.objects.filter(user=user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

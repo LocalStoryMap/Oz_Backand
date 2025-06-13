@@ -22,10 +22,7 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 # ---도메인 설정-------------------------------------------------
-ALLOWED_HOSTS = [
-    "localstorymap.com",
-    "127.0.0.1",
-]
+ALLOWED_HOSTS = ["*"]
 
 USE_X_FORWARDED_HOST = True
 
