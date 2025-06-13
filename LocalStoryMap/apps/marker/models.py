@@ -46,6 +46,14 @@ class Marker(models.Model):
         auto_now=True,
         verbose_name="수정일시",
     )
+    LAYER_CHOICES = [
+        ("tour", "관광명소"),
+        ("food", "맛집"),
+        ("cafe", "카페"),
+    ]
+    layer = models.CharField(
+        max_length=20, blank=True, null=True, choices=LAYER_CHOICES, verbose_name="레이어"
+    )
 
     class Meta:
         db_table = "markers"

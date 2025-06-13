@@ -17,6 +17,7 @@ class MarkerSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "coordinate",  # @property 필드
+            "layer",
         ]
         read_only_fields = ["id", "created_at", "updated_at", "coordinate"]
 

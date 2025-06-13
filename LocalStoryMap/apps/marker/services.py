@@ -21,6 +21,10 @@ class MarkerService:
         # 조건에 맞는 마커 목록 조회 (필터링 및 페이지네이션)
         queryset = Marker.objects.all().order_by("-created_at")
 
+        # 레이어(관광명소/맛집/카페 등) 필터 추가
+        if layer := filters.get("layer"):
+            queryset = queryset.filter(layer=layer)
+
         # 검색어 필터
         # (:=)를 사용하여 filters 딕셔너리에서 'search_term'을 가져오고, 그 값이 존재하면 if문 안의 로직을 실행
         if search_term := filters.get("search_term"):
