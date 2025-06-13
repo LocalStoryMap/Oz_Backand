@@ -3,6 +3,7 @@ cat > .gitignore << 'EOF'
 .DS_Store
 .AppleDouble
 .LSOverride
+.idea
 ._*
 
 # ===== Python =====
