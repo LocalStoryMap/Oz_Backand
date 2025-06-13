@@ -11,4 +11,4 @@ urlpatterns = [
         PaymentHistoryDetailAPIView.as_view(),
         name="payment-history-detail",
     ),
-] 
+]

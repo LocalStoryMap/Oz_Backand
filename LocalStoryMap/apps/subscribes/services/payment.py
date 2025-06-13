@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PaymentResult:
     """결제 검증 결과"""
+
     imp_uid: str
     merchant_uid: str
     amount: int
@@ -44,6 +45,7 @@ class PaymentResult:
 
 class PaymentVerificationError(Exception):
     """결제 검증 실패"""
+
     pass
 
 
@@ -69,14 +71,17 @@ class ImpClient:
                 timeout=5,
             )
             resp.raise_for_status()
-            self._access_token = resp.json()["response"]["access_token"]
-            return self._access_token
+            token = resp.json()["response"]["access_token"]
+            if not token:
+                raise PaymentVerificationError("토큰 발급 실패")
+            self._access_token = token
+            return token
 
         except requests.exceptions.RequestException as e:
             logger.error(f"포트원 토큰 발급 실패: {e}")
             raise PaymentVerificationError("결제 검증 중 오류가 발생했습니다.")
 
-    def get_payment(self, imp_uid: str) -> Dict[str, Any]:
+    def get_payment(self, imp_uid: str) -> dict[str, Any]:
         """결제 내역 조회"""
         try:
             resp = requests.get(
@@ -150,4 +155,4 @@ class PaymentService:
             )
             # 결제 이력 생성 실패는 검증 실패로 처리하지 않음
 
-        return result 
+        return result

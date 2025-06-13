@@ -45,7 +45,9 @@ class PaymentHistory(models.Model):
     def __str__(self) -> str:
         return f"{self.user.email} - {self.imp_uid} ({self.amount}원)"
 
-    def delete(self, using: Any = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
+    def delete(
+        self, using: Any = None, keep_parents: bool = False
+    ) -> tuple[int, dict[str, int]]:
         """결제 이력 삭제 (소프트 삭제)
 
         실제로 DB에서 삭제하지 않고, is_delete 필드만 True로 설정합니다.

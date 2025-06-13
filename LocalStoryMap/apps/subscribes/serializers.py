@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class SubscribeInputSerializer(serializers.Serializer):
     """구독 생성 입력 스펙"""
+
     imp_uid = serializers.CharField(max_length=255)
     merchant_uid = serializers.CharField(max_length=100)
 
@@ -38,6 +39,7 @@ class SubscribeInputSerializer(serializers.Serializer):
 
 class SubscribeSerializer(serializers.ModelSerializer):
     """구독 조회 응답 스펙"""
+
     user_id = serializers.IntegerField(source="user.id", read_only=True)
 
     class Meta:

@@ -1,7 +1,6 @@
 import logging
 from typing import Any, cast
 
-from django.contrib.auth.models import User
 from django.db.models import QuerySet
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -10,6 +9,8 @@ from rest_framework.generics import ListAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.users.models import User
 
 from .models import PaymentHistory
 from .serializers import PaymentHistorySerializer
@@ -52,14 +53,14 @@ class PaymentHistoryListAPIView(ListAPIView):
                             "receipt_url": "https://receipt.example.com/imp_1234567890",
                             "created_at": "2024-06-12T12:34:56+09:00",
                             "updated_at": "2024-06-12T12:34:56+09:00",
-                            "is_delete": False
+                            "is_delete": False,
                         }
                     ]
                 },
             ),
             401: "인증되지 않은 사용자",
         },
-        tags=["결제 이력"]
+        tags=["결제 이력"],
     )
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """결제 이력 목록 조회"""
@@ -105,7 +106,7 @@ class PaymentHistoryDetailAPIView(APIView):
                         "receipt_url": "https://receipt.example.com/imp_1234567890",
                         "created_at": "2024-06-12T12:34:56+09:00",
                         "updated_at": "2024-06-12T12:34:56+09:00",
-                        "is_delete": False
+                        "is_delete": False,
                     }
                 },
             ),
@@ -124,7 +125,7 @@ class PaymentHistoryDetailAPIView(APIView):
                 ),
             ),
         },
-        tags=["결제 이력"]
+        tags=["결제 이력"],
     )
     def get(self, request: Request, payment_id: int) -> Response:
         """결제 이력 상세 조회"""
@@ -154,7 +155,7 @@ class PaymentHistoryDetailAPIView(APIView):
             401: "인증되지 않은 사용자",
             404: "결제 이력을 찾을 수 없음",
         },
-        tags=["결제 이력"]
+        tags=["결제 이력"],
     )
     def delete(self, request: Request, payment_id: int) -> Response:
         """결제 이력 소프트 딜리트"""
@@ -166,4 +167,4 @@ class PaymentHistoryDetailAPIView(APIView):
             return Response(
                 {"error": "결제 이력을 찾을 수 없습니다."},
                 status=status.HTTP_404_NOT_FOUND,
-            ) 
+            )
