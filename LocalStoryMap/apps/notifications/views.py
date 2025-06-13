@@ -32,21 +32,24 @@ class NotificationSettingViewSet(viewsets.ModelViewSet):
 
     @swagger_auto_schema(
         tags=["notifications"],
-        operation_summary="알림 설정 상세 조회", operation_description="특정 알림 설정의 상세 정보를 조회합니다."
+        operation_summary="알림 설정 상세 조회",
+        operation_description="특정 알림 설정의 상세 정보를 조회합니다.",
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
         tags=["notifications"],
-        operation_summary="알림 설정 수정", operation_description="기존 알림 설정을 업데이트합니다."
+        operation_summary="알림 설정 수정",
+        operation_description="기존 알림 설정을 업데이트합니다.",
     )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
     @swagger_auto_schema(
         tags=["notifications"],
-        operation_summary="알림 설정 삭제", operation_description="특정 알림 설정을 삭제합니다."
+        operation_summary="알림 설정 삭제",
+        operation_description="특정 알림 설정을 삭제합니다.",
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)

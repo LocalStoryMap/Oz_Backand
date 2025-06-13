@@ -1,11 +1,12 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status, mixins, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.notifications.models import Notification
+
 from .models import Follow
 from .serializers import FollowSerializer
 
@@ -36,7 +37,7 @@ class FollowViewSet(
     @swagger_auto_schema(
         tags=["follows"],
         operation_summary="팔로우 생성",
-        operation_description="지정된 사용자를 팔로우합니다. 대상 사용자에게 실시간 알림이 전송됩니다."
+        operation_description="지정된 사용자를 팔로우합니다. 대상 사용자에게 실시간 알림이 전송됩니다.",
     )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
@@ -44,7 +45,7 @@ class FollowViewSet(
     @swagger_auto_schema(
         tags=["follows"],
         operation_summary="언팔로우 (삭제)",
-        operation_description="지정된 팔로우 관계를 삭제합니다. 본인의 팔로우만 취소할 수 있습니다."
+        operation_description="지정된 팔로우 관계를 삭제합니다. 본인의 팔로우만 취소할 수 있습니다.",
     )
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
