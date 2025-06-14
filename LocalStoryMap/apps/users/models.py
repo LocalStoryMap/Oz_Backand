@@ -1,70 +1,107 @@
-from django.contrib.auth.models import AbstractUser
+from typing import Any, ClassVar, List, Optional, TypeVar
+
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
+
+UserType = TypeVar("UserType", bound="User")
+
+
+class CustomUserManager(UserManager[UserType]):
+    """
+    수퍼클래스(UserManager)와 완전 동일한 시그니처로 재정의.
+    username/email 위치만 바꿔서 email만 쓰도록 내부 로직 처리.
+    """
+
+    use_in_migrations = True
+
+    def _create_user(
+        self,
+        email: str,
+        password: Optional[str],
+        **extra_fields: Any,
+    ) -> UserType:
+        if not email:
+            raise ValueError("이메일을 반드시 입력해야 합니다.")
+        email = self.normalize_email(email)
+        user: UserType = self.model(email=email, **extra_fields)  # type: ignore[call-arg]
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(
+        self,
+        username: str,
+        email: Optional[str] = None,
+        password: Optional[str] = None,
+        **extra_fields: Any,
+    ) -> UserType:
+        # 시그니처는 (username, email=None, password=None, **)
+        actual_email = email or username
+        extra_fields.setdefault("is_staff", False)
+        extra_fields.setdefault("is_superuser", False)
+        return self._create_user(actual_email, password, **extra_fields)
+
+    def create_superuser(
+        self,
+        username: str,
+        email: Optional[str] = None,
+        password: Optional[str] = None,
+        **extra_fields: Any,
+    ) -> UserType:
+        # 시그니처는 수퍼클래스와 동일
+        actual_email = email or username
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        if not extra_fields["is_staff"] or not extra_fields["is_superuser"]:
+            raise ValueError("슈퍼유저는 is_staff=True, is_superuser=True 이어야 합니다.")
+
+        return self._create_user(actual_email, password, **extra_fields)
 
 
 class User(AbstractUser):
     """
-    AbstractUser를 상속받아 기본 필드(username, password 등)를 유지하면서,
-    소셜 로그인 관련 필드와 추가 정보를 정의함.
+    · username 필드를 제거하고(email만 인증에 사용)
+    · 소셜 로그인 필드를 추가한 커스텀 유저
     """
 
-    # 1) 이메일을 소셜 계정 식별자로 사용하기 위해, unique=True로 설정(카카오/구글 이메일 중복 방지)
+    # ──────────────────────────────
+    # AbstractUser.username(CharField)을 덮어쓰기
+    # ──────────────────────────────
+    username: ClassVar[None] = None  # type: ignore[assignment,misc]
+
+    # ──────────────────────────────
+    # 실제 DB 컬럼으로 사용할 이메일
+    # ──────────────────────────────
     email = models.EmailField(
         verbose_name="소셜 계정 이메일",
         max_length=254,
         unique=True,
-        blank=False,
-        null=False,
     )
 
-    # 2) 사용자의 닉네임 (소셜 프로플에 있으면 가져오고, 없으면 빈 문자열 처리)
-    nickname = models.CharField(
-        verbose_name="사용자 닉네임",
-        max_length=50,
-        blank=True,
-        null=True,
-    )
-
-    # 3) 소셜 제공자 구분 (ex. kakao , google)
+    # 소셜 로그인 추가 정보
+    nickname = models.CharField(max_length=50, blank=True, null=True)
     provider = models.CharField(
-        verbose_name="소셜 제공자",
         max_length=20,
         choices=(("kakao", "Kakao"), ("google", "Google")),
         default="kakao",
     )
-
-    # 4) 소셜 플랫폼에서 발급해 주는 고유 ID (string으로 저장)
-    social_id = models.CharField(
-        verbose_name="소셜 고유 ID",
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="카카오 또는 구글에서 제공하는 유저 고유 ID",
-    )
-
-    # 5) 프로필 이미지
+    social_id = models.CharField(max_length=100, blank=True, null=True)
     profile_image = models.ImageField(
-        verbose_name="프로필 이미지",
-        upload_to="profile_images/",
-        blank=True,
-        null=True,
+        upload_to="profile_images/", blank=True, null=True
     )
+    is_paid_user = models.BooleanField(default=False)
 
-    # 6) 인앱 결제 여부 -> default=False
-    is_paid_user = models.BooleanField(
-        verbose_name="인앱 결제 여부",
-        default=False,
-    )
+    # ──────────────────────────────
+    # 커스텀 매니저 덮어쓰기
+    # ──────────────────────────────
+    objects: ClassVar[UserManager["User"]] = CustomUserManager()  # type: ignore[assignment,misc]
 
-    # AbstractUser에 이미 email, username, password, is_staff, is_active, date_joined, last_login 등이 포함됨
-    # 따라서, is_active는 AbstractUser에서 default=True로 이미 관리됨.
+    # ──────────────────────────────
+    # 인증 관련 설정
+    # ──────────────────────────────
+    USERNAME_FIELD: ClassVar[str] = "email"  # type: ignore[misc]
+    REQUIRED_FIELDS: ClassVar[List[str]] = []
 
-    # ------------------------------------------------------------------------------
-    # **id**(AutoField PK), **first_name**, **last_name** 등은 AbstractUser가 제공 → 그대로 사용
-    # ------------------------------------------------------------------------------
-    # ※ USERNAME_FIELD를 'email'로 변경하여, 로그인 시 이메일을 식별자로 사용하도록 할 수 있음
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []  # email을 USERNAME_FIELD로 쓰기 떄문에, 필수필드 목록을 비워둠
-
-    def __str__(self):
-        return f"{self.email}({self.provider})"
+    def __str__(self) -> str:
+        return f"{self.email} ({self.provider})"
