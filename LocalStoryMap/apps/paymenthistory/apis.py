@@ -18,13 +18,13 @@ from .serializers import PaymentHistorySerializer
 logger = logging.getLogger(__name__)
 
 
-class PaymentHistoryListAPIView(ListAPIView[PaymentHistory]):
-    """결제 이력 목록 조회 API"""
+class PaymentHistoryListAPIView(ListAPIView):
+    """결제 이력 목록 조회"""
 
-    serializer_class = PaymentHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PaymentHistorySerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[PaymentHistory]:
         """사용자의 결제 이력 목록 조회"""
         user = cast(User, self.request.user)
         return PaymentHistory.objects.filter(user_id=user.id)
@@ -67,25 +67,16 @@ class PaymentHistoryListAPIView(ListAPIView[PaymentHistory]):
         return super().get(request, *args, **kwargs)
 
 
-class PaymentHistoryDetailAPIView(
-    RetrieveAPIView[PaymentHistory], DestroyAPIView[PaymentHistory]
-):
-    """결제 이력 상세 조회/삭제 API"""
+class PaymentHistoryDetailAPIView(RetrieveAPIView, DestroyAPIView):
+    """결제 이력 상세 조회 및 삭제"""
 
-    serializer_class = PaymentHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PaymentHistorySerializer
     lookup_field = "id"
 
-    def get_queryset(self):
-        """결제 이력 객체 조회"""
+    def get_queryset(self) -> QuerySet[PaymentHistory]:
         user = cast(User, self.request.user)
-        try:
-            return PaymentHistory.objects.get(id=self.kwargs["id"], user_id=user.id)
-        except PaymentHistory.DoesNotExist:
-            logger.warning(
-                f"존재하지 않는 결제 이력 접근 시도: user_id={user.id}, payment_id={self.kwargs['id']}"
-            )
-            raise PaymentHistory.DoesNotExist("결제 이력을 찾을 수 없습니다")
+        return PaymentHistory.objects.filter(user_id=user.id)
 
     @swagger_auto_schema(
         operation_summary="결제 이력 상세 조회",
