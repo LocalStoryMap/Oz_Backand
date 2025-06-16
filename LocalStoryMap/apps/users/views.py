@@ -15,6 +15,7 @@ from .utils import KakaoAPI, get_google_user_info
 
 
 class KakaoLoginView(APIView):
+    authentication_classes = []
     permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
