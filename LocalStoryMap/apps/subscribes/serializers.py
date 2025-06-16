@@ -16,24 +16,22 @@ class SubscribeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Subscribe
         fields = [
-            "id",
+            "subscribe_id",
             "user",
             "user_email",
-            "payment_history_id",
-            "expires_at",
+            "imp_uid",  # 결제 고유 ID
+            "merchant_uid",  # 가맹점 주문번호
             "is_active",
-            "created_at",
-            "updated_at",
+            "start_at",
+            "expires_at",
         ]
         read_only_fields = [
-            "id",
+            "subscribe_id",
             "user",
             "user_email",
-            "payment_history_id",
-            "expires_at",
             "is_active",
-            "created_at",
-            "updated_at",
+            "start_at",
+            "expires_at",
         ]
 
 
