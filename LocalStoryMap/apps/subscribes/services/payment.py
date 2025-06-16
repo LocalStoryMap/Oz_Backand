@@ -214,9 +214,9 @@ class Command(BaseCommand):
         self.stdout.write(f"Expired {expired_count} subscriptions.")
 
 
-class PaymentHistoryManager(models.Manager[T]):
+class PaymentHistoryManager(models.Manager[PaymentHistory]):
     """결제 이력 매니저"""
 
-    def get_queryset(self) -> models.QuerySet[T]:  # PaymentHistory 대신 T 사용
+    def get_queryset(self) -> models.QuerySet[PaymentHistory]:
         """기본 쿼리셋 (삭제되지 않은 결제 이력만)"""
         return super().get_queryset().filter(is_delete=False)
