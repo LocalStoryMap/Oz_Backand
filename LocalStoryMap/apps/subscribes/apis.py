@@ -26,6 +26,11 @@ class SubscribeListCreateAPIView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="내 구독 목록 조회",
+        responses={200: SubscribeSerializer(many=True)},
+        tags=["구독"],
+    )
     def get(self, request: Request) -> Response:
         user_id = request.user.id
         if user_id is None:
@@ -168,6 +173,11 @@ class SubscribeDetailAPIView(APIView):
             )
             raise Http404("구독을 찾을 수 없습니다")
 
+    @swagger_auto_schema(
+        operation_summary="구독 상세 조회",
+        responses={200: SubscribeSerializer(many=True)},
+        tags=["구독"],
+    )
     def get(self, request: Request, subscribe_id: int) -> Response:
         try:
             sub = self.get_object(subscribe_id)
@@ -183,6 +193,11 @@ class SubscribeDetailAPIView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    @swagger_auto_schema(
+        operation_summary="구독 취소",
+        responses={204: "구독  취소 성공", 404: "구독 없음", 500: "서버 에러"},
+        tags=["구독"],
+    )
     def delete(self, request: Request, subscribe_id: int) -> Response:
         try:
             # 활성 구독만 조회 (이미 비활성화된 구독은 404)
