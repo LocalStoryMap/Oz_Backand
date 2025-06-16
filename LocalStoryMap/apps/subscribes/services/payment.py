@@ -1,12 +1,13 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, Dict, Optional, TypeVar, cast
 
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import models
+from django.db.models.query import QuerySet
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -214,9 +215,9 @@ class Command(BaseCommand):
         self.stdout.write(f"Expired {expired_count} subscriptions.")
 
 
-class PaymentHistoryManager(models.Manager[PaymentHistory]):
+class PaymentHistoryManager(models.Manager[T]):
     """결제 이력 매니저"""
 
-    def get_queryset(self) -> models.QuerySet[PaymentHistory]:
+    def get_queryset(self) -> QuerySet[T]:
         """기본 쿼리셋 (삭제되지 않은 결제 이력만)"""
-        return super().get_queryset().filter(is_delete=False)
+        return cast(QuerySet[T], super().get_queryset().filter(is_delete=False))
