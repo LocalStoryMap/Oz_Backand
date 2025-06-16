@@ -5,7 +5,7 @@ from django.db.models import QuerySet
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import DestroyAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -18,13 +18,13 @@ from .serializers import PaymentHistorySerializer
 logger = logging.getLogger(__name__)
 
 
-class PaymentHistoryListAPIView(ListAPIView):
-    """결제 이력 목록 조회"""
+class PaymentHistoryListAPIView(ListAPIView[PaymentHistory]):
+    """결제 이력 목록 조회 API"""
 
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = PaymentHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self) -> QuerySet[PaymentHistory]:
+    def get_queryset(self):
         """사용자의 결제 이력 목록 조회"""
         user = cast(User, self.request.user)
         return PaymentHistory.objects.filter(user_id=user.id)
@@ -67,19 +67,23 @@ class PaymentHistoryListAPIView(ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class PaymentHistoryDetailAPIView(APIView):
-    """결제 이력 상세 조회 및 삭제"""
+class PaymentHistoryDetailAPIView(
+    RetrieveAPIView[PaymentHistory], DestroyAPIView[PaymentHistory]
+):
+    """결제 이력 상세 조회/삭제 API"""
 
+    serializer_class = PaymentHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
 
-    def get_object(self, payment_id: int) -> PaymentHistory:
+    def get_queryset(self):
         """결제 이력 객체 조회"""
         user = cast(User, self.request.user)
         try:
-            return PaymentHistory.objects.get(id=payment_id, user_id=user.id)
+            return PaymentHistory.objects.get(id=self.kwargs["id"], user_id=user.id)
         except PaymentHistory.DoesNotExist:
             logger.warning(
-                f"존재하지 않는 결제 이력 접근 시도: user_id={user.id}, payment_id={payment_id}"
+                f"존재하지 않는 결제 이력 접근 시도: user_id={user.id}, payment_id={self.kwargs['id']}"
             )
             raise PaymentHistory.DoesNotExist("결제 이력을 찾을 수 없습니다")
 
@@ -127,10 +131,10 @@ class PaymentHistoryDetailAPIView(APIView):
         },
         tags=["결제 이력"],
     )
-    def get(self, request: Request, payment_id: int) -> Response:
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """결제 이력 상세 조회"""
         try:
-            payment = self.get_object(payment_id)
+            payment = self.get_queryset()
             return Response(PaymentHistorySerializer(payment).data)
         except PaymentHistory.DoesNotExist:
             return Response(
@@ -140,7 +144,7 @@ class PaymentHistoryDetailAPIView(APIView):
         except Exception as e:
             user = cast(User, request.user)
             logger.error(
-                f"결제 이력 상세 조회 실패: user_id={user.id}, payment_id={payment_id}, error={e}"
+                f"결제 이력 상세 조회 실패: user_id={user.id}, payment_id={self.kwargs['id']}, error={e}"
             )
             return Response(
                 {"error": "결제 이력을 조회하는 중 오류가 발생했습니다."},
@@ -157,10 +161,10 @@ class PaymentHistoryDetailAPIView(APIView):
         },
         tags=["결제 이력"],
     )
-    def delete(self, request: Request, payment_id: int) -> Response:
+    def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """결제 이력 소프트 딜리트"""
         try:
-            payment = self.get_object(payment_id)
+            payment = self.get_queryset()
             payment.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except PaymentHistory.DoesNotExist:
