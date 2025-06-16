@@ -88,8 +88,9 @@ class User(AbstractUser):
     )
     social_id = models.CharField(max_length=200, blank=True, null=True)
     profile_image = models.ImageField(
-        upload_to="profile_images/", blank=True, null=True
+        upload_to="profile_images/", max_length=300, blank=True, null=True
     )
+
     is_paid_user = models.BooleanField(default=False)
 
     # ──────────────────────────────
