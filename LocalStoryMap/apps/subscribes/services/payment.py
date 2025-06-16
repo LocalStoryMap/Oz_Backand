@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, TypeVar, cast
+from typing import Any, Dict, Optional, cast
 
 import requests
 from django.conf import settings
@@ -15,8 +15,6 @@ from apps.paymenthistory.models import PaymentHistory, PaymentStatus
 from apps.subscribes.models import Subscribe
 
 logger = logging.getLogger(__name__)
-
-T = TypeVar("T", bound=PaymentHistory)  # PaymentHistory 타입으로 제한
 
 
 @dataclass
@@ -215,9 +213,9 @@ class Command(BaseCommand):
         self.stdout.write(f"Expired {expired_count} subscriptions.")
 
 
-class PaymentHistoryManager(models.Manager[T]):
+class PaymentHistoryManager(models.Manager):
     """결제 이력 매니저"""
 
-    def get_queryset(self) -> QuerySet[T]:
+    def get_queryset(self) -> QuerySet[PaymentHistory]:
         """기본 쿼리셋 (삭제되지 않은 결제 이력만)"""
-        return cast(QuerySet[T], super().get_queryset().filter(is_delete=False))
+        return super().get_queryset().filter(is_delete=False)

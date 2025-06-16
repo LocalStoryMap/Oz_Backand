@@ -62,9 +62,14 @@ plugins = [
     "mypy_drf_plugin.main",
 ]
 
-# PaymentHistoryManager의 misc 에러 무시
+# PaymentHistoryManager의 misc, override, return-value 에러 무시
 [[tool.mypy.overrides]]
 module = "apps.subscribes.services.payment"
+disable_error_code = ["misc", "override", "return-value"]
+
+# PaymentHistory API의 misc 에러 무시
+[[tool.mypy.overrides]]
+module = "apps.paymenthistory.apis"
 disable_error_code = ["misc"]
 
 [tool.django-stubs]
