@@ -80,13 +80,13 @@ class User(AbstractUser):
     )
 
     # 소셜 로그인 추가 정보
-    nickname = models.CharField(max_length=50, blank=True, null=True)
+    nickname = models.CharField(max_length=200, blank=True, null=True)
     provider = models.CharField(
         max_length=20,
         choices=(("kakao", "Kakao"), ("google", "Google")),
         default="kakao",
     )
-    social_id = models.CharField(max_length=100, blank=True, null=True)
+    social_id = models.CharField(max_length=200, blank=True, null=True)
     profile_image = models.ImageField(
         upload_to="profile_images/", blank=True, null=True
     )
