@@ -19,7 +19,7 @@ class KakaoLoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
-        operation_summary="카카오 로그인 (Authorization Code 방식)",
+        operation_summary="카카오 로그인 (인가 코드 방식)",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             required=["code"],
@@ -56,22 +56,44 @@ class KakaoLoginView(APIView):
                     status=400,
                 )
 
-            # 3) DB에서 기존 유저 조회 or 신규 생성
+            # 3) DB에서 기존 유저 조회 or 신규 생성 (이메일 중복 처리 포함)
             try:
+                # 이미 kakao로 가입된 유저
                 user = User.objects.get(provider="kakao", social_id=social_id)
                 user.last_login = timezone.now()
                 user.save(update_fields=["last_login"])
                 created = False
             except User.DoesNotExist:
-                user = User.objects.create(
-                    email=email,
-                    nickname=nickname or "",
-                    provider="kakao",
-                    social_id=social_id,
-                    profile_image=profile_image or "",
-                    username=email.split("@")[0],
-                )
-                created = True
+                # 다른 provider로 가입된 동일 이메일이 있는지 확인
+                existing = User.objects.filter(email=email).first()
+                if existing:
+                    # 이메일 중복 사용자 -> kakao 정보로 업데이트
+                    existing.nickname = nickname or existing.nickname
+                    existing.provider = "kakao"
+                    existing.social_id = social_id
+                    existing.profile_image = profile_image or existing.profile_image
+                    existing.last_login = timezone.now()
+                    existing.save(
+                        update_fields=[
+                            "nickname",
+                            "provider",
+                            "social_id",
+                            "profile_image",
+                            "last_login",
+                        ]
+                    )
+                    user = existing
+                    created = False
+                else:
+                    # 완전 신규 사용자
+                    user = User.objects.create(
+                        email=email,
+                        nickname=nickname or "",
+                        provider="kakao",
+                        social_id=social_id,
+                        profile_image=profile_image or "",
+                    )
+                    created = True
 
             # 4) JWT 토큰 발급
             refresh = RefreshToken.for_user(user)
@@ -98,16 +120,19 @@ class KakaoLoginView(APIView):
 
 
 class GoogleLoginView(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+
     @swagger_auto_schema(
         operation_summary="Google 소셜 로그인 (인가 코드 방식)",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
+            required=["code"],
             properties={
                 "code": openapi.Schema(
                     type=openapi.TYPE_STRING, description="Google OAuth2 인가 코드"
                 ),
             },
-            required=["code"],
         ),
         responses={200: openapi.Response(description="JWT 토큰")},
     )
@@ -117,8 +142,8 @@ class GoogleLoginView(APIView):
             return Response(
                 {"error": "code(인가 코드)를 전달해주세요."}, status=status.HTTP_400_BAD_REQUEST
             )
-        code = unquote(code)
 
+        code = unquote(code)
         # 1) 구글에서 토큰 교환 & 유저 정보 조회
         try:
             user_info = get_google_user_info(code)
@@ -133,23 +158,21 @@ class GoogleLoginView(APIView):
         name = user_info.get("name")
         picture = user_info.get("picture", "")
 
-        # 2) DB 에 이미 provider="google", social_id=google_sub 으로 가입된 유저가 있는지 찾기
+        # 2) provider="google" & social_id 일치하는 유저 존재 확인
         user = User.objects.filter(provider="google", social_id=google_sub).first()
         if user:
-            # (A) 완전 처음 로그인은 아님
             user.last_login = timezone.now()
             user.save(update_fields=["last_login"])
             created = False
         else:
-            # 3) 아직 google social_id 로는 없는 유저 → 이메일 기준으로 있던 유저인지 다시 확인
-            user = User.objects.filter(email=email).first()
-            if user:
-                # (B) 카카오 등으로 이미 가입된 같은 이메일 계정이 있다면, 해당 레코드를 “구글”로 업데이트
-                user.provider = "google"
-                user.social_id = google_sub
-                user.profile_image = picture
-                user.last_login = timezone.now()
-                user.save(
+            # 3) 이메일 중복 확인
+            existing = User.objects.filter(email=email).first()
+            if existing:
+                existing.provider = "google"
+                existing.social_id = google_sub
+                existing.profile_image = picture
+                existing.last_login = timezone.now()
+                existing.save(
                     update_fields=[
                         "provider",
                         "social_id",
@@ -157,12 +180,12 @@ class GoogleLoginView(APIView):
                         "last_login",
                     ]
                 )
+                user = existing
                 created = False
             else:
-                # (C) 완전 신규 이메일
+                # 4) 완전 신규 사용자
                 user = User.objects.create(
                     email=email,
-                    username=email.split("@")[0],
                     first_name=name,
                     provider="google",
                     social_id=google_sub,
@@ -170,15 +193,20 @@ class GoogleLoginView(APIView):
                 )
                 created = True
 
-        # 4) JWT 발급 및 응답
+        # 5) JWT 발급 및 응답
         refresh = RefreshToken.for_user(user)
+        access_jwt = str(refresh.access_token)
+        refresh_jwt = str(refresh)
+
+        user_data = UserSerializer(user).data
         return Response(
             {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "user": UserSerializer(user).data,
+                "access": access_jwt,
+                "refresh": refresh_jwt,
+                "user": user_data,
                 "is_new_user": created,
-            }
+            },
+            status=200,
         )
 
 
