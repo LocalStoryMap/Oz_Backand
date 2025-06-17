@@ -38,10 +38,21 @@ class StoryImageViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(tags=["스토리 이미지"],
                          operation_summary="스토리 이미지",
                          responses={
-                             200: openapi.Response(
+                             201: openapi.Response(
                                  description="이미지 생성 성공.", schema=ImageSerializer(many=True)
                                 )
                              }
                          )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(tags=["스토리 이미지"],
+                         operation_summary="스토리 이미지",
+                         responses={
+                             204: openapi.Response(
+                                 description="이미지 생성 성공.", schema=ImageSerializer(many=True)
+                                )
+                             }
+                         )
+    def delete(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)

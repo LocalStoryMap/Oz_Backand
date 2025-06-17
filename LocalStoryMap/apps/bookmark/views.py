@@ -21,7 +21,7 @@ from .serializers import BookmarkSerializer
     name="create",
     decorator=swagger_auto_schema(tags=["북마크"], operation_summary="스토리 북마크 추가",
     responses={
-                200: openapi.Response(
+                201: openapi.Response(
                 description="북마크 추가됨.", schema=BookmarkSerializer(many=True)
             )
         }
@@ -31,7 +31,7 @@ from .serializers import BookmarkSerializer
     name="destroy",
     decorator=swagger_auto_schema(tags=["북마크"], operation_summary="스토리 북마크 삭제",
     responses={
-                200: openapi.Response(
+                204: openapi.Response(
                 description="북마크 삭제됨.", schema=BookmarkSerializer(many=True)
             )
         }
