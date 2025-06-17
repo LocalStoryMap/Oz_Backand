@@ -40,6 +40,18 @@ class CommentSerializer(serializers.ModelSerializer):
     user_profile_image = serializers.ImageField(
         source="user.profile_image", read_only=True
     )
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=StoryComment.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "story" in self.context:
+            story = self.context["story"]
+            self.fields["parent"].queryset = StoryComment.objects.filter(story=story)
 
     class Meta:
         model = StoryComment
@@ -51,8 +63,16 @@ class CommentSerializer(serializers.ModelSerializer):
             "content",
             "created_at",
             "updated_at",
+            "parent",
         ]
-        read_only_fields = fields
+        read_only_fields = [
+            "comment_id",
+            "story_id",
+            "user_nickname",
+            "user_profile_image",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class StoryLikeSerializer(serializers.ModelSerializer):
