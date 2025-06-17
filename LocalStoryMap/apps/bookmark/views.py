@@ -1,9 +1,42 @@
+from django.utils.decorators import method_decorator
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from rest_framework import mixins, permissions, viewsets
 
 from .models import Bookmark
 from .serializers import BookmarkSerializer
 
 
+@method_decorator(
+    name="list",
+    decorator=swagger_auto_schema(tags=["북마크"], operation_summary="스토리 북마크",
+    responses={
+                200: openapi.Response(
+                description="북마크 불러오기 성공.", schema=BookmarkSerializer(many=True)
+            )
+        }
+    ),
+)
+@method_decorator(
+    name="create",
+    decorator=swagger_auto_schema(tags=["북마크"], operation_summary="스토리 북마크 추가",
+    responses={
+                200: openapi.Response(
+                description="북마크 추가됨.", schema=BookmarkSerializer(many=True)
+            )
+        }
+    ),
+)
+@method_decorator(
+    name="destroy",
+    decorator=swagger_auto_schema(tags=["북마크"], operation_summary="스토리 북마크 삭제",
+    responses={
+                200: openapi.Response(
+                description="북마크 삭제됨.", schema=BookmarkSerializer(many=True)
+            )
+        }
+    ),
+)
 class BookmarkViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
