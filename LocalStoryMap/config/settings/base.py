@@ -76,10 +76,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "storages",
-    # own
-    "apps.marker",
-    "apps.route",
-    "apps.route_marker",
     "channels",
     "drf_yasg",
     # myapp
@@ -87,6 +83,11 @@ INSTALLED_APPS = [
     "apps.storyimage",  # 스토리 이미지 앱
     "apps.subscribes",
     "django_crontab",
+    "apps.marker",
+    "apps.route",
+    "apps.route_marker",
+    "apps.marker_like",
+    "apps.route_like",
 ]
 
 ASGI_APPLICATION = "config.asgi.application"

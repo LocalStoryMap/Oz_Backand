@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 
 
 class Marker(models.Model):
@@ -54,6 +55,10 @@ class Marker(models.Model):
     layer = models.CharField(
         max_length=20, blank=True, null=True, choices=LAYER_CHOICES, verbose_name="레이어"
     )
+    like_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="마커 좋아요 수",
+    )
 
     class Meta:
         db_table = "markers"
@@ -72,3 +77,16 @@ class Marker(models.Model):
     def get_routes(self):
         # 이 마커가 포함된 경로들
         return [rm.route for rm in self.route_markers.select_related("route")]
+
+    def increment_like_count(self):
+        """좋아요 수 증가"""
+        self.like_count = F('like_count') + 1
+        self.save(update_fields=['like_count'])
+        self.refresh_from_db()
+
+    def decrement_like_count(self):
+        """좋아요 수 감소"""
+        if self.like_count > 0:
+            self.like_count = F('like_count') - 1
+            self.save(update_fields=['like_count'])
+            self.refresh_from_db()
