@@ -2,13 +2,11 @@ from django.urls import path
 
 from apps.story.apis import (
     CommentDetailAPIView,
-    CommentLikeDetailAPIView,
-    CommentLikeListAPIView,
+    CommentLikeAPIView,
     CommentListAPIView,
     StoryAPIView,
     StoryDetailAPIView,
-    StoryLikeDetailAPIView,
-    StoryLikeListAPIView,
+    StoryLikeAPIView,
 )
 
 app_name = "stories"
@@ -24,28 +22,16 @@ urlpatterns = [
         name="comment-list-create",
     ),
     path(
-        "comments/<int:comment_id>/",
+        "<int:story_id>/comments/<int:comment_id>/",
         CommentDetailAPIView.as_view(),
         name="comment-detail",
     ),
     # 스토리 좋아요 관련 URL
-    path(
-        "<int:story_id>/likes/", StoryLikeListAPIView.as_view(), name="story-like-list"
-    ),
-    path(
-        "<int:story_id>/likes/<int:user_id>/",
-        StoryLikeDetailAPIView.as_view(),
-        name="story-like-detail",
-    ),
+    path("<int:story_id>/likes/", StoryLikeAPIView.as_view(), name="story-like"),
     # 댓글 좋아요 관련 URL
     path(
-        "comments/<int:comment_id>/likes/",
-        CommentLikeListAPIView.as_view(),
-        name="comment-like-list",
-    ),
-    path(
-        "comments/<int:comment_id>/likes/<int:user_id>/",
-        CommentLikeDetailAPIView.as_view(),
-        name="comment-like-detail",
+        "<int:story_id>/comments/<int:comment_id>/likes/",
+        CommentLikeAPIView.as_view(),
+        name="comment-like",
     ),
 ]

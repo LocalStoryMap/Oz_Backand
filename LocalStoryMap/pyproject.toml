@@ -72,6 +72,11 @@ disable_error_code = ["misc", "override", "return-value"]
 module = "apps.paymenthistory.apis"
 disable_error_code = ["misc"]
 
+# apps.story.serializers의 PrimaryKeyRelatedField 관련 mypy 에러 무시
+[[tool.mypy.overrides]]
+module = "apps.story.serializers"
+disable_error_code = ["type-var", "assignment"]
+
 [tool.django-stubs]
 # Django 설정 파일 경로 지정 (개발용)
 django_settings_module = "config.settings.dev"
