@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     "apps.subscribes",
     "django_crontab",
     "apps.paymenthistory",
+    "apps.story",
 ]
 
 ASGI_APPLICATION = "config.asgi.application"
