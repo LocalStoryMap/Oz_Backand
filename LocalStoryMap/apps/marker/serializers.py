@@ -18,8 +18,9 @@ class MarkerSerializer(serializers.ModelSerializer):
             "updated_at",
             "coordinate",  # @property 필드
             "layer",
+            "like_count"
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "coordinate"]
+        read_only_fields = ["id", "created_at", "updated_at", "coordinate", "like_count"]
 
     def validate_latitude(self, value):
         if not (-90 <= value <= 90):

@@ -13,7 +13,7 @@ marker_like_toggle = MarkerLikeViewSet.as_view({
 })
 
 urlpatterns = [
-    path('api/markers/<int:marker_id>/likes/', marker_like_list, name='marker-like-list'),
-    path('api/markers/<int:marker_id>/likes/status/', marker_like_status, name='marker-like-status'),
-    path('api/markers/<int:marker_id>/likes/toggle/', marker_like_toggle, name='marker-like-toggle'),
+    path('markers/<int:marker_id>/likes/', marker_like_list, name='marker-like-list'),
+    path('markers/<int:marker_id>/likes/status/', marker_like_status, name='marker-like-status'),
+    path('markers/<int:marker_id>/likes/toggle/', marker_like_toggle, name='marker-like-toggle'),
 ]
