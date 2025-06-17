@@ -24,35 +24,38 @@ class StoryImageViewSet(viewsets.ModelViewSet):
         # 2) 그렇지 않으면 전체 Image 리스트
         return self.queryset
 
-    @swagger_auto_schema(tags=["스토리 이미지"],
-                         operation_summary="스토리 이미지",
-                         responses={
-                             200: openapi.Response(
-                                 description="이미지 불러오기 성공.", schema=ImageSerializer(many=True)
-                                )
-                            }
-                        )
+    @swagger_auto_schema(
+        tags=["스토리 이미지"],
+        operation_summary="스토리 이미지",
+        responses={
+            200: openapi.Response(
+                description="이미지 불러오기 성공.", schema=ImageSerializer(many=True)
+            )
+        },
+    )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["스토리 이미지"],
-                         operation_summary="스토리 이미지",
-                         responses={
-                             201: openapi.Response(
-                                 description="이미지 생성 성공.", schema=ImageSerializer(many=True)
-                                )
-                             }
-                         )
+    @swagger_auto_schema(
+        tags=["스토리 이미지"],
+        operation_summary="스토리 이미지",
+        responses={
+            201: openapi.Response(
+                description="이미지 생성 성공.", schema=ImageSerializer(many=True)
+            )
+        },
+    )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
-    @swagger_auto_schema(tags=["스토리 이미지"],
-                         operation_summary="스토리 이미지",
-                         responses={
-                             204: openapi.Response(
-                                 description="이미지 생성 성공.", schema=ImageSerializer(many=True)
-                                )
-                             }
-                         )
+    @swagger_auto_schema(
+        tags=["스토리 이미지"],
+        operation_summary="스토리 이미지",
+        responses={
+            204: openapi.Response(
+                description="이미지 생성 성공.", schema=ImageSerializer(many=True)
+            )
+        },
+    )
     def delete(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
