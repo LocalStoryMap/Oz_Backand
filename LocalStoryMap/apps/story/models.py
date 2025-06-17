@@ -31,9 +31,10 @@ class StoryComment(models.Model):
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, related_name="replies", blank=True, null=True
     )
-    content = models.TextField(blank=True, verbose_name="댓글 내용")
+    content = models.TextField(blank=False, verbose_name="댓글 내용")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+    like_count = models.PositiveIntegerField(default=0)
     is_deleted = models.BooleanField(default=False)
 
     class Meta:
