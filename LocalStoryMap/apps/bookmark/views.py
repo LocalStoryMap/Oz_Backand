@@ -1,12 +1,14 @@
-from rest_framework import mixins, viewsets, permissions
+from rest_framework import mixins, permissions, viewsets
+
 from .models import Bookmark
 from .serializers import BookmarkSerializer
+
 
 class BookmarkViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
+    viewsets.GenericViewSet,
 ):
     """
     list:
@@ -18,6 +20,7 @@ class BookmarkViewSet(
     destroy:
     Remove a bookmark by its ID.
     """
+
     serializer_class = BookmarkSerializer
     permission_classes = [permissions.IsAuthenticated]
 

@@ -79,9 +79,9 @@ INSTALLED_APPS = [
     "channels",
     "drf_yasg",
     # myapp
-    "apps.ai_service", # 요약/챗봇 기능을 담당할 앱
-    "apps.storyimage", # 스토리 이미지 앱
-    "apps.bookmark", # 스토리 북마크 앱
+    "apps.ai_service",  # 요약/챗봇 기능을 담당할 앱
+    "apps.storyimage",  # 스토리 이미지 앱
+    "apps.bookmark",  # 스토리 북마크 앱
     "apps.subscribes",
     "django_crontab",
     "apps.marker",

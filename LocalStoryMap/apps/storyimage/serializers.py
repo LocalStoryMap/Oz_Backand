@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-# Story 모델을 명시적으로 import 합니다.
-from apps.storyimage.models import Story
+from apps.story.models import Story
 
 from .models import StoryImage
 
