@@ -80,13 +80,13 @@ class Marker(models.Model):
 
     def increment_like_count(self):
         # 좋아요 수 증가
-        self.like_count = F('like_count') + 1
-        self.save(update_fields=['like_count'])
+        self.like_count = F("like_count") + 1
+        self.save(update_fields=["like_count"])
         self.refresh_from_db()
 
     def decrement_like_count(self):
         # 좋아요 수 감소
         if self.like_count > 0:
-            self.like_count = F('like_count') - 1
-            self.save(update_fields=['like_count'])
+            self.like_count = F("like_count") - 1
+            self.save(update_fields=["like_count"])
             self.refresh_from_db()

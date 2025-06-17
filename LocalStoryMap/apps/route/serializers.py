@@ -26,7 +26,14 @@ class RouteSerializer(serializers.ModelSerializer):
             "marker_count",
             "like_count",
         ]
-        read_only_fields = ["id", "user", "created_at", "updated_at", "marker_count", "like_count"]
+        read_only_fields = [
+            "id",
+            "user",
+            "created_at",
+            "updated_at",
+            "marker_count",
+            "like_count",
+        ]
 
 
 class RouteCreateSerializer(serializers.ModelSerializer):
