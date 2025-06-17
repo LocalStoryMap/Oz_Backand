@@ -69,14 +69,19 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    # marker, route 앱 관련 엔드 포인트
     path("api/", include("apps.marker.urls")),
     path("api/", include("apps.route.urls")),
     path("api/", include("apps.route_marker.urls")),
+    path("api/", include("apps.marker_like.urls")),
+    path("api/", include("apps.route_like.urls")),
+    # ai 서비스 앱 엔드 포인트
     path("api/ai/", include("apps.ai_service.urls")),
     path("api/", include("apps.storyimage.urls")),
     path("api/", include("apps.bookmark.urls")),
     path("api/subscribes/", include("apps.subscribes.urls", namespace="subscribes")),
     path("api/payments", include("apps.paymenthistory.urls", namespace="payments")),
+    path("api/stories/", include("apps.story.urls", namespace="stories")),
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────

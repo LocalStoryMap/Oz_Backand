@@ -1,7 +1,7 @@
-from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import F
 
-User = get_user_model()  # 임시 유저
+from apps.users.models import User
 
 
 class Route(models.Model):
@@ -32,6 +32,10 @@ class Route(models.Model):
         default=False,
         verbose_name="공개여부",
     )
+    like_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="경로 좋아요 수",
+    )
 
     class Meta:
         db_table = "routes"
@@ -50,3 +54,16 @@ class Route(models.Model):
     def get_ordered_markers(self):
         # 순서대로 정렬된 마커들 반환
         return self.route_markers.select_related("marker").order_by("sequence")
+
+    def increment_like_count(self):
+        # 좋아요 수 증가
+        self.like_count = F("like_count") + 1
+        self.save(update_fields=["like_count"])
+        self.refresh_from_db()
+
+    def decrement_like_count(self):
+        # 좋아요 수 감소
+        if self.like_count > 0:
+            self.like_count = F("like_count") - 1
+            self.save(update_fields=["like_count"])
+            self.refresh_from_db()
