@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.story.models import CommentLike, Story, StoryComment, StoryLike
+from apps.storyimage.serializers import ImageSerializer
 
 
 class StorySerializer(serializers.ModelSerializer):
@@ -8,6 +9,7 @@ class StorySerializer(serializers.ModelSerializer):
     user_profile_image = serializers.ImageField(
         source="user.profile_image", read_only=True
     )
+    story_images = ImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Story
@@ -23,6 +25,7 @@ class StorySerializer(serializers.ModelSerializer):
             "like_count",
             "created_at",
             "updated_at",
+            "story_images",
         ]
         read_only_fields = [
             "story_id",
