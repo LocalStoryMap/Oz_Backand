@@ -78,6 +78,7 @@ urlpatterns = [
     path("api/", include("apps.storyimage.urls")),
     path("api/subscribes/", include("apps.subscribes.urls", namespace="subscribes")),
     path("api/payments", include("apps.paymenthistory.urls", namespace="payments")),
+    path("api/stories/", include("apps.story.urls", namespace="stories")),
 ]
 
 # ─── DEBUG 모드에서만 Debug Toolbar URL 추가 ───────────────
