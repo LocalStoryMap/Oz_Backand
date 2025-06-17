@@ -1,37 +1,48 @@
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import SearchHistory
-from .serializers import SearchHistorySerializer
+from apps.marker.models import Marker
+from apps.users.models import User
+
+from .serializers import MarkerSearchResultSerializer, UserSearchResultSerializer
 
 
-class SearchHistoryViewSet(viewsets.ModelViewSet):
-    """
-    검색 기록 CRUD
-    """
-
-    serializer_class = SearchHistorySerializer
+class SearchView(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        operation_summary="검색 기록 목록 조회",
-        operation_description="현재 사용자의 검색 기록 목록을 조회합니다.",
+        tags=["search"],
+        manual_parameters=[
+            openapi.Parameter(
+                "query",
+                openapi.IN_QUERY,
+                description="검색어",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        operation_summary="통합 검색",
+        operation_description="유저 닉네임, 마커 제목 등을 통합 검색합니다.",
     )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+    def get(self, request):
+        query = request.query_params.get("query", "").strip()
+        if not query:
+            return Response({"detail": "검색어(query)가 필요합니다."}, status=400)
 
-    @swagger_auto_schema(
-        operation_summary="검색 기록 생성",
-        operation_description="현재 사용자에 대한 새로운 검색 기록을 생성합니다.",
-    )
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        # 예시: 닉네임으로 유저 검색
+        users = User.objects.filter(nickname__icontains=query)
+        user_results = UserSearchResultSerializer(users, many=True).data
 
-    def get_queryset(self):
-        if getattr(self, "swagger_fake_view", False):
-            return SearchHistory.objects.none()
-        return SearchHistory.objects.filter(user=self.request.user)
+        # 예시: 마커 제목 검색
+        markers = Marker.objects.filter(title__icontains=query)
+        marker_results = MarkerSearchResultSerializer(markers, many=True).data
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        return Response(
+            {
+                "users": user_results,
+                "markers": marker_results,
+            }
+        )

@@ -16,13 +16,13 @@ ROOT_URLCONF = "config.urls.urls_prod"
 # ---CORS 설정 (프로덕션용)---------------------------------------
 CORS_ALLOWED_ORIGINS = [
     "https://www.localstorymap.com",
+    "https://localstorymap.com",
+    "http://localhost:3000",
 ]
 
+CORS_ALLOW_CREDENTIALS = True
 # ---도메인 설정-------------------------------------------------
-ALLOWED_HOSTS = [
-    "localstorymap.com",
-    "127.0.0.1",
-]
+ALLOWED_HOSTS = ["*"]
 
 USE_X_FORWARDED_HOST = True
 

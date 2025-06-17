@@ -88,6 +88,8 @@ INSTALLED_APPS = [
     "apps.route_marker",
     "apps.marker_like",
     "apps.route_like",
+    "apps.paymenthistory",
+    "apps.story",
 ]
 
 ASGI_APPLICATION = "config.asgi.application"
@@ -158,6 +160,27 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "OPTIONS",
+    "PUT",
+    "DELETE",
+    "PATCH",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 # ─── 비밀번호 검증 설정 ────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [

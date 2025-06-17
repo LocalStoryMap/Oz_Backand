@@ -1,14 +1,16 @@
 from rest_framework import serializers
 
-from .models import SearchHistory
+from apps.marker.models import Marker  # 예시용
+from apps.users.models import User
 
 
-class SearchHistorySerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True, label="ID")
-    query = serializers.CharField(label="검색어")
-    searched_at = serializers.DateTimeField(read_only=True, label="검색 일시")
-
+class UserSearchResultSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SearchHistory
-        fields = ["id", "query", "searched_at"]
-        read_only_fields = ["id", "searched_at"]
+        model = User
+        fields = ["id", "nickname", "profile_image"]
+
+
+class MarkerSearchResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Marker
+        fields = ["id", "title", "description"]

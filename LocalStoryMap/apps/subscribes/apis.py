@@ -1,18 +1,21 @@
 import logging
-from datetime import timedelta
+from typing import cast
 
 import requests
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.http import Http404
-from django.utils import timezone
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
-from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotAuthenticated, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Subscribe
-from .serializers import SubscribeInputSerializer, SubscribeSerializer
+from .serializers import SubscribeCreateSerializer, SubscribeSerializer
+from .services.payment import PaymentService, PaymentVerificationError
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +26,11 @@ class SubscribeListCreateAPIView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_summary="내 구독 목록 조회",
+        responses={200: SubscribeSerializer(many=True)},
+        tags=["구독"],
+    )
     def get(self, request: Request) -> Response:
         user_id = request.user.id
         if user_id is None:
@@ -38,49 +46,71 @@ class SubscribeListCreateAPIView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    @swagger_auto_schema(
+        operation_summary="구독 생성",
+        operation_description="결제 검증 후 구독을 생성합니다.",
+        request_body=SubscribeCreateSerializer,
+        responses={
+            201: openapi.Response(
+                description="구독 생성 성공",
+                schema=SubscribeSerializer,
+            ),
+            400: "잘못된 요청",
+            401: "인증되지 않은 사용자",
+            409: "이미 활성화된 구독이 있음",
+        },
+        tags=["구독"],
+    )
     def post(self, request: Request) -> Response:
-        user_id = request.user.id
-        if user_id is None:
-            raise NotAuthenticated("인증된 사용자만 접근 가능합니다")
+        """구독 생성"""
+        # 1. 요청 데이터 검증
+        serializer = SubscribeCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
+        # 2. 결제 검증 및 구독 생성
         try:
-            # 시리얼라이저에서 모든 검증 수행
-            in_ser = SubscribeInputSerializer(data=request.data)
-            in_ser.is_valid(raise_exception=True)
+            user = cast(User, request.user)
+            payment_service = PaymentService()
 
-            # 구독 생성/갱신
-            defaults = {
-                "imp_uid": in_ser.validated_data["imp_uid"],
-                "merchant_uid": in_ser.validated_data["merchant_uid"],
-                "is_active": True,
-                "expires_at": timezone.now()
-                + timedelta(days=settings.SINGLE_PLAN_DURATION),
-            }
-            sub, created = Subscribe.objects.update_or_create(
-                user_id=user_id,
-                defaults=defaults,
-            )
-            logger.info(
-                f"구독 {'생성' if created else '갱신'} 성공: "
-                f"user_id={user_id}, subscribe_id={sub.subscribe_id}"
+            # 결제 검증 및 구독 생성 (단일 트랜잭션)
+            payment_result, subscription = payment_service.process_subscription_payment(
+                imp_uid=data["imp_uid"],
+                merchant_uid=data["merchant_uid"],
+                user_id=user.id,
             )
 
+            # 3. 응답
             return Response(
-                SubscribeSerializer(sub).data, status=status.HTTP_201_CREATED
+                SubscribeSerializer(subscription).data,
+                status=status.HTTP_201_CREATED,
             )
 
+        except PaymentVerificationError as e:
+            logger.warning(
+                f"결제 검증 실패: user_id={user.id}, "
+                f"imp_uid={data['imp_uid']}, error={str(e)}"
+            )
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ValidationError as e:
+            logger.warning(
+                f"구독 생성 실패: user_id={user.id}, "
+                f"imp_uid={data['imp_uid']}, error={str(e)}"
+            )
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_409_CONFLICT,
+            )
         except Exception as e:
             logger.error(
-                f"구독 생성/갱신 실패: user_id={user_id}, "
-                f"imp_uid={request.data.get('imp_uid')}, error={e}"
+                f"구독 생성 실패: user_id={user.id}, "
+                f"imp_uid={data['imp_uid']}, error={str(e)}"
             )
-            # 결제는 성공했지만 구독 생성에 실패한 경우, 환불 처리
-            try:
-                self._refund_payment(request.data.get("imp_uid"))
-            except Exception as refund_error:
-                logger.error(f"환불 처리 실패: {refund_error}")
             return Response(
-                {"error": "구독 처리 중 오류가 발생했습니다. 결제는 환불되었습니다."},
+                {"error": "구독 생성 중 오류가 발생했습니다."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -143,6 +173,11 @@ class SubscribeDetailAPIView(APIView):
             )
             raise Http404("구독을 찾을 수 없습니다")
 
+    @swagger_auto_schema(
+        operation_summary="구독 상세 조회",
+        responses={200: SubscribeSerializer(many=True)},
+        tags=["구독"],
+    )
     def get(self, request: Request, subscribe_id: int) -> Response:
         try:
             sub = self.get_object(subscribe_id)
@@ -158,6 +193,11 @@ class SubscribeDetailAPIView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    @swagger_auto_schema(
+        operation_summary="구독 취소",
+        responses={204: "구독  취소 성공", 404: "구독 없음", 500: "서버 에러"},
+        tags=["구독"],
+    )
     def delete(self, request: Request, subscribe_id: int) -> Response:
         try:
             # 활성 구독만 조회 (이미 비활성화된 구독은 404)
