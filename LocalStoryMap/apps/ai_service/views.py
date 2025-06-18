@@ -1,4 +1,6 @@
 from django.shortcuts import get_object_or_404
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +12,7 @@ from .utils.clova_client import ClovaClient
 
 class SummarizeAPIView(APIView):
     """
-    POST /api/summarize/
+    POST /api/ai/summarize/
     {
         "location_id": 123
     }
@@ -24,6 +26,15 @@ class SummarizeAPIView(APIView):
     }
     """
 
+    @swagger_auto_schema(
+        tags=["AI 기능"],
+        operation_summary="상세 스토리 요약 기능",
+        responses={
+            200: openapi.Response(
+                description="요약 성공", schema=SummarizeRequestSerializer(many=True)
+            )
+        },
+    )
     def post(self, request, *args, **kwargs):
         serializer = SummarizeRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -61,7 +72,7 @@ class SummarizeAPIView(APIView):
 
 class ChatAPIView(APIView):
     """
-    POST /api/chat/
+    POST /api/ai/chat/
     {
         "messages": [
             { "role": "system", "content": "너는 ~~~"},
@@ -75,6 +86,15 @@ class ChatAPIView(APIView):
     }
     """
 
+    @swagger_auto_schema(
+        tags=["AI 기능"],
+        operation_summary="사용자 챗봇 기능",
+        responses={
+            200: openapi.Response(
+                description="응답 성공", schema=ChatRequestSerializer(many=True)
+            )
+        },
+    )
     def post(self, request, *args, **kwargs):
         serializer = ChatRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
