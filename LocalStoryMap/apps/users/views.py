@@ -297,7 +297,6 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
     GET    /users/me/   → 내 정보 조회
     PUT    /users/me/   → 내 정보 전체 수정
     PATCH  /users/me/   → 내 정보 일부 수정
-    DELETE /users/me/   → 회원 탈퇴
     """
 
     permission_classes = [permissions.IsAuthenticated]
