@@ -8,7 +8,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env_path = BASE_DIR / ".env"
 if env_path.exists():
     load_dotenv(env_path)
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", os.getenv("DJANGO_SETTINGS_MODULE", "config.settings.dev"))
+    os.environ.setdefault(
+        "DJANGO_SETTINGS_MODULE",
+        os.getenv("DJANGO_SETTINGS_MODULE", "config.settings.dev"),
+    )
 
 # ─── 스토리지 설정 플래그 ─────────────────────────────────
 USE_S3_STORAGE = os.getenv("USE_S3_STORAGE", "false").lower() == "true"
@@ -44,9 +47,7 @@ AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com"
 AWS_S3_ADDRESSING_STYLE = "path"
 AWS_QUERYSTRING_AUTH = False
 AWS_DEFAULT_ACL = "public-read"
-AWS_S3_OBJECT_PARAMETERS = {
-    "ACL": "public-read"
-}
+AWS_S3_OBJECT_PARAMETERS = {"ACL": "public-read"}
 
 # 정적 파일은 로컬에서 서빙
 STATIC_URL = "/static/"
