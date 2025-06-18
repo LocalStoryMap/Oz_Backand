@@ -28,6 +28,7 @@ class CustomUserManager(UserManager[UserType]):
         user.save(using=self._db)
         return user
 
+    # type: ignore[override]
     def create_user(
         self,
         username: str,
@@ -35,12 +36,11 @@ class CustomUserManager(UserManager[UserType]):
         password: Optional[str] = None,
         **extra_fields: Any,
     ) -> UserType:
-        # 시그니처는 (username, email=None, password=None, **)
-        actual_email = email or username
-        extra_fields.setdefault("is_staff", False)
-        extra_fields.setdefault("is_superuser", False)
-        return self._create_user(actual_email, password, **extra_fields)
+        return self._create_user(
+            email=email or username, password=password, **extra_fields
+        )
 
+    # type: ignore[override]
     def create_superuser(
         self,
         username: str,
@@ -48,15 +48,15 @@ class CustomUserManager(UserManager[UserType]):
         password: Optional[str] = None,
         **extra_fields: Any,
     ) -> UserType:
-        # 시그니처는 수퍼클래스와 동일
-        actual_email = email or username
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
         if not extra_fields["is_staff"] or not extra_fields["is_superuser"]:
             raise ValueError("슈퍼유저는 is_staff=True, is_superuser=True 이어야 합니다.")
 
-        return self._create_user(actual_email, password, **extra_fields)
+        return self._create_user(
+            email=email or username, password=password, **extra_fields
+        )
 
 
 class User(AbstractUser):
