@@ -77,6 +77,11 @@ disable_error_code = ["misc"]
 module = "apps.story.serializers"
 disable_error_code = ["type-var", "assignment"]
 
+# Ignore override errors in CustomUserManager
+[[tool.mypy.overrides]]
+module = "apps.users.models"
+disable_error_code = ["override"]
+
 [tool.django-stubs]
 # Django 설정 파일 경로 지정 (개발용)
 django_settings_module = "config.settings.dev"
