@@ -12,6 +12,7 @@ class RouteSerializer(serializers.ModelSerializer):
         serializers.StringRelatedField()
     )  # 사용자 정보를 닉네임 등으로 간단히 표시
     marker_count = serializers.IntegerField(read_only=True)  # @property 필드
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Route
@@ -25,6 +26,7 @@ class RouteSerializer(serializers.ModelSerializer):
             "is_public",
             "marker_count",
             "like_count",
+            "is_liked",
         ]
         read_only_fields = [
             "id",
@@ -33,7 +35,14 @@ class RouteSerializer(serializers.ModelSerializer):
             "updated_at",
             "marker_count",
             "like_count",
+            "is_liked",
         ]
+
+    def get_is_liked(self, obj):
+        user = self.context["request"].user
+        if user.is_authenticated:
+            return obj.likes.filter(user=user, is_liked=True).exists()
+        return False
 
 
 class RouteCreateSerializer(serializers.ModelSerializer):
