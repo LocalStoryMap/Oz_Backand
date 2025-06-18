@@ -25,7 +25,9 @@ class MarkerViewSet(viewsets.ViewSet):
             filters=filter_serializer.validated_data, page=page, limit=limit
         )
 
-        serialized_data = MarkerSerializer(result["markers"], many=True).data
+        serialized_data = MarkerSerializer(
+            result["markers"], many=True, context={"request": request}
+        ).data
 
         return Response(
             {
@@ -39,7 +41,7 @@ class MarkerViewSet(viewsets.ViewSet):
         # POST /markers: 마커 생성
         try:
             marker = MarkerService.create_marker(data=request.data)
-            serializer = MarkerSerializer(marker)
+            serializer = MarkerSerializer(marker, context={"request": request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -47,7 +49,7 @@ class MarkerViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         # GET /markers/{marker_id}: 특정 마커 조회
         marker = MarkerService.get_marker(marker_id=pk)
-        serializer = MarkerSerializer(marker)
+        serializer = MarkerSerializer(marker, context={"request": request})
         return Response(serializer.data)
 
     def update(self, request, pk=None):
@@ -57,7 +59,7 @@ class MarkerViewSet(viewsets.ViewSet):
             updated_marker = MarkerService.update_marker(
                 marker=marker, data=request.data
             )
-            serializer = MarkerSerializer(updated_marker)
+            serializer = MarkerSerializer(updated_marker, context={"request": request})
             return Response(serializer.data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

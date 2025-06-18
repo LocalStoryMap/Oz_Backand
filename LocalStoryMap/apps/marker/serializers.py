@@ -4,6 +4,8 @@ from .models import Marker
 
 
 class MarkerSerializer(serializers.ModelSerializer):
+    is_liked = serializers.SerializerMethodField()
+
     class Meta:
         model = Marker
         fields = [
@@ -19,6 +21,7 @@ class MarkerSerializer(serializers.ModelSerializer):
             "coordinate",  # @property 필드
             "layer",
             "like_count",
+            "is_liked",
         ]
         read_only_fields = [
             "id",
@@ -26,6 +29,7 @@ class MarkerSerializer(serializers.ModelSerializer):
             "updated_at",
             "coordinate",
             "like_count",
+            "is_liked",
         ]
 
     def validate_latitude(self, value):
@@ -37,6 +41,12 @@ class MarkerSerializer(serializers.ModelSerializer):
         if not (-180 <= value <= 180):
             raise serializers.ValidationError("경도는 -180과 180 사이여야 합니다.")
         return value
+
+    def get_is_liked(self, obj):
+        user = self.context["request"].user
+        if user.is_authenticated:
+            return obj.likes.filter(user=user, is_liked=True).exists()
+        return False
 
 
 class MarkerListFilterSerializer(serializers.Serializer):
