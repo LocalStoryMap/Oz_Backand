@@ -249,6 +249,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
         "rest_framework.permissions.IsAuthenticated",
+        "apps.subscribes.permissions.IsActiveSubscriber",  # 구독 permission 관리
     ],
     # 렌더러 클래스 추가
     "DEFAULT_RENDERER_CLASSES": [

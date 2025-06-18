@@ -10,7 +10,7 @@ class Story(models.Model):
     marker = models.ForeignKey(Marker, on_delete=models.CASCADE, related_name="stories")
     title = models.CharField(max_length=100, verbose_name="스토리 제목")
     content = models.TextField(blank=True, verbose_name="스토리 내용")
-    emoji = models.URLField(max_length=500, blank=True, verbose_name="스토리 감정 이모티콘 URL")
+    emoji = models.CharField(max_length=500, blank=True, verbose_name="스토리 감정 이모티콘")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     view_count = models.PositiveIntegerField(default=0)
