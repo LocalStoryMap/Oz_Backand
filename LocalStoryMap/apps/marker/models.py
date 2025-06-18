@@ -4,7 +4,11 @@ from django.db.models import F
 
 class Marker(models.Model):
     story = models.ForeignKey(
-        "story.Story", on_delete=models.SET_NULL, null=True, blank=True
+        "story.Story",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="stories",
     )
     marker_name = models.CharField(
         max_length=100,
