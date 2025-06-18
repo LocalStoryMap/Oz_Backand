@@ -3,12 +3,7 @@ from django.db.models import F
 
 
 class Marker(models.Model):
-    story = models.ForeignKey(
-    'apps.Story',
-    on_delete=models.SET_NULL,
-    null=True,
-    blank=True
-    )
+    story = models.ForeignKey('story.Story', on_delete=models.SET_NULL, null=True, blank=True)
     marker_name = models.CharField(
         max_length=100,
         verbose_name="마커명",
