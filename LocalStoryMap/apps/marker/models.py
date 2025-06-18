@@ -3,12 +3,12 @@ from django.db.models import F
 
 
 class Marker(models.Model):
-    # story = models.ForeignKey(
-    # 'apps.Story',
-    # on_delete=models.SET_NULL,
-    # null=True,
-    # blank=True
-    # )
+    story = models.ForeignKey(
+    'apps.Story',
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True
+    )
     marker_name = models.CharField(
         max_length=100,
         verbose_name="마커명",
@@ -50,7 +50,7 @@ class Marker(models.Model):
     LAYER_CHOICES = [
         ("tour", "관광명소"),
         ("food", "맛집"),
-        ("cafe", "카페"),
+        ("infra", "인프라"),
     ]
     layer = models.CharField(
         max_length=20, blank=True, null=True, choices=LAYER_CHOICES, verbose_name="레이어"
