@@ -86,6 +86,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "updated_at",
             "parent_id",  # 요청 시 사용
             "parent",  # 응답 시 사용
+            "like_count",
         ]
         read_only_fields = [
             "comment_id",
@@ -95,6 +96,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "parent",  # 응답 전용
+            "like_count",
         ]
 
 
