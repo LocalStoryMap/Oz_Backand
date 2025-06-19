@@ -111,7 +111,7 @@ class StoryDetailAPIView(APIView):
 
 
 class CommentListAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     @swagger_auto_schema(
         operation_summary="댓글 목록 조회",
