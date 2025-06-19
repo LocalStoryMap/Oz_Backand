@@ -1,11 +1,12 @@
+from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import parsers, permissions, viewsets
-from django.shortcuts import get_object_or_404
+
+from apps.story.models import Story  # Story 모델 import 추가
 
 from .models import StoryImage
 from .serializers import ImageSerializer
-from apps.story.models import Story  # Story 모델 import 추가
 
 
 class StoryImageViewSet(viewsets.ModelViewSet):
@@ -47,9 +48,7 @@ class StoryImageViewSet(viewsets.ModelViewSet):
         tags=["스토리 이미지"],
         operation_summary="스토리 이미지 생성",
         responses={
-            201: openapi.Response(
-                description="이미지 생성 성공.", schema=ImageSerializer()
-            )
+            201: openapi.Response(description="이미지 생성 성공.", schema=ImageSerializer())
         },
     )
     def create(self, request, *args, **kwargs):
@@ -58,9 +57,7 @@ class StoryImageViewSet(viewsets.ModelViewSet):
     @swagger_auto_schema(
         tags=["스토리 이미지"],
         operation_summary="스토리 이미지 삭제",
-        responses={
-            204: openapi.Response(description="이미지 삭제 성공.")
-        },
+        responses={204: openapi.Response(description="이미지 삭제 성공.")},
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
