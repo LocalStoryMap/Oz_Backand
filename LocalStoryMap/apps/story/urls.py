@@ -4,6 +4,7 @@ from apps.story.apis import (
     CommentDetailAPIView,
     CommentLikeAPIView,
     CommentListAPIView,
+    MarkerStoryListAPIView,
     StoryAPIView,
     StoryDetailAPIView,
     StoryLikeAPIView,
@@ -33,5 +34,11 @@ urlpatterns = [
         "<int:story_id>/comments/<int:comment_id>/likes/",
         CommentLikeAPIView.as_view(),
         name="comment-like",
+    ),
+    # 마커별 스토리 목록 조회 URL
+    path(
+        "marker/<int:marker_id>/",
+        MarkerStoryListAPIView.as_view(),
+        name="marker-story-list",
     ),
 ]

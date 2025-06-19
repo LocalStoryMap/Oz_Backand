@@ -16,7 +16,7 @@ from apps.story.serializers import (
 
 
 class StoryAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     @swagger_auto_schema(
         operation_summary="스토리 목록 조회",
@@ -111,7 +111,7 @@ class StoryDetailAPIView(APIView):
 
 
 class CommentListAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     @swagger_auto_schema(
         operation_summary="댓글 목록 조회",
@@ -345,3 +345,24 @@ class CommentLikeAPIView(APIView):
         comment.save(update_fields=["like_count"])
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MarkerStoryListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="특정 마커의 스토리 목록 조회",
+        responses={
+            200: openapi.Response(description="OK", schema=StorySerializer(many=True))
+        },
+        tags=["스토리"],
+    )
+    def get(self, request, marker_id, *args, **kwargs):
+        # 특정 마커에 해당하는 스토리 목록을 조회합니다 (페이지네이션 적용)
+        qs = Story.objects.filter(is_deleted=False, marker_id=marker_id).order_by(
+            "-created_at"
+        )
+        paginator = PageNumberPagination()
+        page = paginator.paginate_queryset(qs, request, view=self)
+        serializer = StorySerializer(page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)

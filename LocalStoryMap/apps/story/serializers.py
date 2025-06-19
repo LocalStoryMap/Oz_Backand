@@ -1,3 +1,4 @@
+from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
 from apps.story.models import CommentLike, Story, StoryComment, StoryLike
@@ -10,6 +11,7 @@ class StorySerializer(serializers.ModelSerializer):
         source="user.profile_image", read_only=True
     )
     story_images = ImageSerializer(many=True, read_only=True)
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
@@ -26,6 +28,7 @@ class StorySerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "story_images",
+            "is_liked",
         ]
         read_only_fields = [
             "story_id",
@@ -37,24 +40,39 @@ class StorySerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField())
+    def get_is_liked(self, obj):
+        user = self.context.get("request").user
+        if not user or not user.is_authenticated:
+            return False
+        return StoryLike.objects.filter(user=user, story=obj).exists()
+
 
 class CommentSerializer(serializers.ModelSerializer):
     user_nickname = serializers.CharField(source="user.nickname", read_only=True)
     user_profile_image = serializers.ImageField(
         source="user.profile_image", read_only=True
     )
-    parent = serializers.PrimaryKeyRelatedField(
+    # 요청(request) 바디에서는 parent_id로 부모 댓글 ID를 받습니다.
+    parent_id = serializers.PrimaryKeyRelatedField(
         queryset=StoryComment.objects.all(),
+        source="parent",
         write_only=True,
         required=False,
         allow_null=True,
+        help_text="(Optional) 부모 댓글의 ID",
+    )
+    # 응답(response)에서는 parent로 부모 댓글 ID만 보여줍니다.
+    parent = serializers.IntegerField(
+        source="parent.comment_id", read_only=True, help_text="(Optional) 부모 댓글의 ID"
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # context로 전달된 story에 따라 parent_id 선택지를 제한
         if "story" in self.context:
             story = self.context["story"]
-            self.fields["parent"].queryset = StoryComment.objects.filter(story=story)
+            self.fields["parent_id"].queryset = StoryComment.objects.filter(story=story)
 
     class Meta:
         model = StoryComment
@@ -66,7 +84,8 @@ class CommentSerializer(serializers.ModelSerializer):
             "content",
             "created_at",
             "updated_at",
-            "parent",
+            "parent_id",  # 요청 시 사용
+            "parent",  # 응답 시 사용
         ]
         read_only_fields = [
             "comment_id",
@@ -75,18 +94,19 @@ class CommentSerializer(serializers.ModelSerializer):
             "user_profile_image",
             "created_at",
             "updated_at",
+            "parent",  # 응답 전용
         ]
 
 
 class StoryLikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = StoryLike
-        fields = ["story", "user", "created_at"]
+        fields = ["story", "user", "created_at", "like_count"]
         read_only_fields = fields
 
 
 class CommentLikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommentLike
-        fields = ["comment", "user", "created_at"]
+        fields = ["comment", "user", "created_at", "like_count"]
         read_only_fields = fields
