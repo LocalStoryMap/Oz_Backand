@@ -2,10 +2,12 @@ from django.conf import settings
 from django.db import models
 
 from apps.story.models import Story
+from apps.users.models import User
 
 
 class StoryImage(models.Model):
     image_id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="storyimages")
     story = models.ForeignKey(
         Story, on_delete=models.CASCADE, related_name="storyimages"
     )

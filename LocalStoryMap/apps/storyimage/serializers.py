@@ -26,5 +26,7 @@ class ImageSerializer(serializers.ModelSerializer):
         return obj.image_file.url  # fallback
 
     def create(self, validated_data):
-        # image_file과 story 관계는 ModelViewSet.create에서 자동 처리됩니다.
+        request = self.context.get("request")
+        print("🔥 user:", request.user)  # 로그 확인
+        validated_data["user"] = request.user
         return super().create(validated_data)
