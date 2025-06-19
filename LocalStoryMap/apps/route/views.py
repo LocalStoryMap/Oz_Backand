@@ -31,7 +31,9 @@ class RouteViewSet(viewsets.ViewSet):
             limit=limit,
         )
 
-        serialized_data = RouteSerializer(result["routes"], many=True).data
+        serialized_data = RouteSerializer(
+            result["routes"], many=True, context={"request": request}
+        ).data
 
         return Response(
             {
@@ -45,7 +47,7 @@ class RouteViewSet(viewsets.ViewSet):
         # POST /routes: 경로 생성
         try:
             route = RouteService.create_route(request=request, data=request.data)
-            serializer = RouteSerializer(route)
+            serializer = RouteSerializer(route, context={"request": request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -57,9 +59,11 @@ class RouteViewSet(viewsets.ViewSet):
 
             # include_markers 파라미터에 따라 다른 시리얼라이저 사용
             if request.query_params.get("include_markers", "true").lower() == "true":
-                serializer = RouteWithOrderedMarkersSerializer(route)
+                serializer = RouteWithOrderedMarkersSerializer(
+                    route, context={"request": request}
+                )
             else:
-                serializer = RouteSerializer(route)
+                serializer = RouteSerializer(route, context={"request": request})
 
             return Response({"success": True, "data": serializer.data})
         except PermissionError as e:
@@ -76,7 +80,7 @@ class RouteViewSet(viewsets.ViewSet):
             updated_route = RouteService.update_route(
                 request=request, route=route, data=request.data
             )
-            serializer = RouteSerializer(updated_route)
+            serializer = RouteSerializer(updated_route, context={"request": request})
             return Response(serializer.data)
         except PermissionError as e:
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)

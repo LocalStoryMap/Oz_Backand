@@ -7,13 +7,14 @@ from dotenv import load_dotenv
 
 load_dotenv()  # .env 환경변수 로드
 
+# ✅ 수정된 라인
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE", os.getenv("DJANGO_SETTINGS_MODULE", "config.settings.dev")
+)
+
 
 def main():
     """Run administrative tasks."""
-    os.environ["DJANGO_SETTINGS_MODULE"] = os.environ.get(
-        "DJANGO_SETTINGS_MODULE",
-        "config.settings.dev",
-    )
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
