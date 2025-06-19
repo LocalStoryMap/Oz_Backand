@@ -14,6 +14,7 @@ class Marker(models.Model):
         max_length=100,
         verbose_name="마커명",
     )
+    summary_text = models.TextField(blank=True, null=True, verbose_name="요약문")
     adress = models.TextField(
         blank=True,
         null=True,
