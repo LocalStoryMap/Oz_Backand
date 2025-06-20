@@ -34,9 +34,8 @@ class MarkerService:
                 | Q(adress__icontains=search_term)  # OR
             )
 
-        # 스토리 필터 추후 연결시 주석해제
-        # if story_id := filters.get('story_id'):
-        #     queryset = queryset.filter(story_id=story_id)
+        if story_id := filters.get("story_id"):
+            queryset = queryset.filter(story_id=story_id)
 
         # 위치 기반 필터 (단순 거리 계산 예시)
         final_markers = []

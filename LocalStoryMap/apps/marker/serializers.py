@@ -53,6 +53,7 @@ class MarkerListFilterSerializer(serializers.Serializer):
     # 마커 목록 조회의 쿼리 파라미터 유효성 검사를 위한 시리얼라이저.
     story_id = serializers.IntegerField(required=False)
     search_term = serializers.CharField(required=False, max_length=100)
+    layer = serializers.CharField(required=False, max_length=20)
     latitude = serializers.FloatField(required=False)
     longitude = serializers.FloatField(required=False)
     radius = serializers.FloatField(
@@ -70,3 +71,9 @@ class MarkerListFilterSerializer(serializers.Serializer):
             )
 
         return attrs
+
+    def validate_layer(self, value):
+        valid_layers = ["tour", "food", "infra"]
+        if value and value not in valid_layers:
+            raise serializers.ValidationError(f"유효하지 않은 layer 값입니다. ({valid_layers})")
+        return value
