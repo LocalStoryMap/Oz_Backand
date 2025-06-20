@@ -22,19 +22,29 @@ AWS_DEFAULT_ACL = "public-read"
 AWS_S3_OBJECT_PARAMETERS = {"ACL": "public-read"}
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 
-# ─── S3 저장 여부 판단 ───────────────────────────────
-USE_S3_STORAGE = os.getenv("USE_S3_STORAGE", "false").lower() == "true"
-print("🔥 USE_S3_STORAGE:", USE_S3_STORAGE)
+# ─── S3 환경 변수 설정 ───────────────────────────────
+AWS_ACCESS_KEY_ID = os.getenv("NCP_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = os.getenv("NCP_SECRET_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("NCP_BUCKET_NAME")
+AWS_S3_REGION_NAME = "kr-standard"
+AWS_S3_ENDPOINT_URL = "https://kr.object.ncloudstorage.com"
+AWS_S3_ADDRESSING_STYLE = "path"
+AWS_QUERYSTRING_AUTH = False
+AWS_DEFAULT_ACL = "public-read"
+AWS_S3_OBJECT_PARAMETERS = {"ACL": "public-read"}
+AWS_S3_SIGNATURE_VERSION = "s3v4"
 
-if USE_S3_STORAGE:
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
-    print("🔥 S3 설정 적용됨")
-else:
-    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
-    MEDIA_URL = "/media/"
-    print("⚠️ S3 설정 적용되지 않음")
+# ─── 스토리지 설정 ────────────────────────────────────
+# 모든 파일(미디어/정적)을 S3에 저장하도록 강제합니다
+default_s3_storage = "storages.backends.s3boto3.S3Boto3Storage"
 
+# 미디어 파일 설정
+DEFAULT_FILE_STORAGE = default_s3_storage
+MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com/media/"
+
+# 정적 파일 설정
+STATICFILES_STORAGE = default_s3_storage
+STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com/static/"
 # ─── 정적 파일 (STATIC) 설정 ─────────────────────────
 STATIC_URL = "/static/"
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -64,7 +74,6 @@ if SENTRY_DSN:
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-if-not-set")
 DEBUG = True
 ROOT_URLCONF = "config.urls"
-
 # ─── 데이터베이스 설정 ─────────────────────────────────────
 DATABASES = {
     "default": {
@@ -72,7 +81,6 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
 # ─── 앱 등록 ─────────────────────────────────────────────
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -215,6 +223,40 @@ TIME_ZONE = "Asia/Seoul"
 USE_I18N = True
 USE_TZ = True
 
+# ─── 스토리지 설정 (환경변수 기반) ────────────────────────
+USE_S3_STORAGE = os.getenv("USE_S3_STORAGE", "False").lower() == "true"
+
+if (
+    USE_S3_STORAGE
+    and AWS_ACCESS_KEY_ID
+    and AWS_SECRET_ACCESS_KEY
+    and AWS_STORAGE_BUCKET_NAME
+):
+    # ─── Static/Media (모두 S3 사용) ──────────────────────────────
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+    # S3 URL 설정 (media/ 제거)
+    STATIC_URL = "/static/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+
+    # 로컬 정적 디렉토리(개발용)
+    STATIC_ROOT = BASE_DIR / "staticfiles"
+    STATICFILES_DIRS = [BASE_DIR / "static"]
+    MEDIA_ROOT = BASE_DIR / "media"
+
+else:
+    # ─── Static은 로컬에서 서빙, Media만 S3에 저장 ─────────────
+    # 1) Static (로컬 디스크)
+    STATIC_URL = "/static/"
+    STATIC_ROOT = BASE_DIR / "staticfiles"
+    STATICFILES_DIRS = [BASE_DIR / "static"]
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+
+    # 2) Media (업로드된 파일만 S3로) - media/ 제거
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+    MEDIA_ROOT = BASE_DIR / "media"
+
 # ─── 기본 설정 ────────────────────────────────────────────
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -317,10 +359,9 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "boto3": {"handlers": ["console"], "level": "DEBUG"},
-        "botocore": {"handlers": ["console"], "level": "DEBUG"},
     },
 }
+
 # ─── 구독 가격, 기간 설정 ────────────────────────────────────
 SINGLE_PLAN_PRICE = int(os.getenv("SINGLE_PLAN_PRICE", "10000"))  # 기본 10,000원
 SINGLE_PLAN_DURATION = int(os.getenv("SINGLE_PLAN_DURATION", "30"))  # 기본 30일
