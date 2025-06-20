@@ -161,19 +161,24 @@ class GoogleLoginView(APIView):
         # 2) provider="google" & social_id 일치하는 유저 존재 확인
         user = User.objects.filter(provider="google", social_id=google_sub).first()
         if user:
+            # 기존 유저: nickname, 프로필, 마지막 로그인 시간 업데이트
+            user.nickname = name or user.nickname
+            user.profile_image = picture or user.profile_image
             user.last_login = timezone.now()
-            user.save(update_fields=["last_login"])
+            user.save(update_fields=["nickname", "profile_image", "last_login"])
             created = False
         else:
-            # 3) 이메일 중복 확인
+            # 이메일로 가입된 유저가 있는지 확인
             existing = User.objects.filter(email=email).first()
             if existing:
+                existing.nickname = name or existing.nickname
                 existing.provider = "google"
                 existing.social_id = google_sub
-                existing.profile_image = picture
+                existing.profile_image = picture or existing.profile_image
                 existing.last_login = timezone.now()
                 existing.save(
                     update_fields=[
+                        "nickname",
                         "provider",
                         "social_id",
                         "profile_image",
@@ -183,10 +188,10 @@ class GoogleLoginView(APIView):
                 user = existing
                 created = False
             else:
-                # 4) 완전 신규 사용자
+                # 완전 신규 사용자: nickname에 name 저장
                 user = User.objects.create(
                     email=email,
-                    first_name=name,
+                    nickname=name or "",
                     provider="google",
                     social_id=google_sub,
                     profile_image=picture,
