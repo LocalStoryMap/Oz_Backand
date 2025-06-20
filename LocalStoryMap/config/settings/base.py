@@ -23,14 +23,14 @@ AWS_S3_OBJECT_PARAMETERS = {"ACL": "public-read"}
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 
 # ─── S3 환경 변수 설정 ───────────────────────────────
-AWS_ACCESS_KEY_ID        = os.getenv("NCP_ACCESS_KEY")
-AWS_SECRET_ACCESS_KEY    = os.getenv("NCP_SECRET_KEY")
-AWS_STORAGE_BUCKET_NAME  = os.getenv("NCP_BUCKET_NAME")
-AWS_S3_REGION_NAME       = "kr-standard"
-AWS_S3_ENDPOINT_URL      = "https://kr.object.ncloudstorage.com"
-AWS_S3_ADDRESSING_STYLE  = "path"
-AWS_QUERYSTRING_AUTH     = False
-AWS_DEFAULT_ACL          = "public-read"
+AWS_ACCESS_KEY_ID = os.getenv("NCP_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = os.getenv("NCP_SECRET_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("NCP_BUCKET_NAME")
+AWS_S3_REGION_NAME = "kr-standard"
+AWS_S3_ENDPOINT_URL = "https://kr.object.ncloudstorage.com"
+AWS_S3_ADDRESSING_STYLE = "path"
+AWS_QUERYSTRING_AUTH = False
+AWS_DEFAULT_ACL = "public-read"
 AWS_S3_OBJECT_PARAMETERS = {"ACL": "public-read"}
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 
