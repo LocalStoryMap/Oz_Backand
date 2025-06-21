@@ -1,3 +1,5 @@
+from django.db.models import ExpressionWrapper, F, FloatField
+from django.db.models.functions import Random
 from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -26,9 +28,23 @@ class StoryAPIView(APIView):
         tags=["스토리"],
     )
     def get(self, request, *args, **kwargs):
-        qs = Story.objects.filter(is_deleted=False).order_by("-created_at")
+        # 1) 기본 필터링
+        qs = Story.objects.filter(is_deleted=False)
+
+        # 2) 랜덤값과 view_count를 섞어 composite_score 계산 (조회수 70%, 랜덤 30%)
+        qs = qs.annotate(
+            rand_val=Random(),
+        ).annotate(
+            composite_score=ExpressionWrapper(
+                F("view_count") * 0.7 + F("rand_val") * 0.3, output_field=FloatField()
+            )
+        )
+
+        # 3) composite_score 내림차순 정렬
+        qs = qs.order_by("-composite_score")
+
+        # 4) 페이징 처리 (전역 설정 반영)
         paginator = PageNumberPagination()
-        # 아래 두 줄이 전역 설정을 따르게 해 줍니다
         page = paginator.paginate_queryset(qs, request, view=self)
         serializer = StorySerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
