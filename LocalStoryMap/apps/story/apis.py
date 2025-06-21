@@ -19,7 +19,7 @@ from apps.story.serializers import (
 
 
 class StoryAPIView(APIView):
-    # 전체 뷰에 “구독자면 전부 OK, 비구독자면 GET만(스토리 조회용)” 정책 적용
+    # 전체 뷰에 "구독자면 전부 OK, 비구독자면 GET만(스토리 조회용)" 정책 적용
     # permission_classes = [SubscriberPermission]
     permission_classes = (permissions.IsAuthenticated,)
     pagination_class = PageNumberPagination
@@ -33,6 +33,7 @@ class StoryAPIView(APIView):
 
     @swagger_auto_schema(
         operation_summary="스토리 목록 조회",
+        operation_description="구독자는 FullStorySerializer, 비구독자는 BasicStorySerializer로 응답됩니다.",
         responses={
             200: openapi.Response(
                 description="OK", schema=FullStorySerializer(many=True)
@@ -80,10 +81,19 @@ class StoryAPIView(APIView):
 
 
 class StoryDetailAPIView(APIView):
+    # 전체 뷰에 "구독자면 전부 OK, 비구독자면 GET만(스토리 조회용)" 정책 적용
+    # permission_classes = [SubscriberPermission]
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        user = self.request.user
+        if getattr(user, "is_paid_user", False):
+            return FullStorySerializer
+        return BasicStorySerializer
 
     @swagger_auto_schema(
         operation_summary="특정 스토리 조회",
+        operation_description="구독자는 FullStorySerializer, 비구독자는 BasicStorySerializer로 응답됩니다.",
         responses={200: openapi.Response(description="OK", schema=FullStorySerializer)},
         tags=["스토리"],
     )
@@ -92,7 +102,8 @@ class StoryDetailAPIView(APIView):
         story = get_object_or_404(Story, story_id=story_id, is_deleted=False)
         story.view_count += 1
         story.save(update_fields=["view_count"])
-        serializer = FullStorySerializer(story, context={"request": request})
+        SerializerClass = self.get_serializer_class()
+        serializer = SerializerClass(story, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -377,10 +388,19 @@ class CommentLikeAPIView(APIView):
 
 
 class MarkerStoryListAPIView(APIView):
+    # 전체 뷰에 "구독자면 전부 OK, 비구독자면 GET만(스토리 조회용)" 정책 적용
+    # permission_classes = [SubscriberPermission]
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        user = self.request.user
+        if getattr(user, "is_paid_user", False):
+            return FullStorySerializer
+        return BasicStorySerializer
 
     @swagger_auto_schema(
         operation_summary="특정 마커의 스토리 목록 조회",
+        operation_description="구독자는 FullStorySerializer, 비구독자는 BasicStorySerializer로 응답됩니다.",
         responses={
             200: openapi.Response(
                 description="OK", schema=FullStorySerializer(many=True)
@@ -389,11 +409,10 @@ class MarkerStoryListAPIView(APIView):
         tags=["스토리"],
     )
     def get(self, request, marker_id, *args, **kwargs):
-        # 특정 마커에 해당하는 스토리 목록을 좋아요 순으로 조회합니다 (페이지네이션 적용)
+        # 특정 마커에 해당하는 스토리 목록을 좋아요 순으로 조회합니다 (상위 10개만 반환)
         qs = Story.objects.filter(is_deleted=False, marker_id=marker_id).order_by(
             "-like_count"
-        )[
-            :10
-        ]  # 상위 10개만 잘라서 가져옴
-        serializer = FullStorySerializer(qs, many=True, context={"request": request})
+        )[:10]
+        SerializerClass = self.get_serializer_class()
+        serializer = SerializerClass(qs, many=True, context={"request": request})
         return Response(serializer.data)
