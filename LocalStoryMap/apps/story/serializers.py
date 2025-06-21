@@ -5,12 +5,15 @@ from apps.story.models import CommentLike, Story, StoryComment, StoryLike
 from apps.storyimage.serializers import ImageSerializer
 
 
-class StorySerializer(serializers.ModelSerializer):
+class FullStorySerializer(serializers.ModelSerializer):
     user_nickname = serializers.CharField(source="user.nickname", read_only=True)
     user_profile_image = serializers.ImageField(
         source="user.profile_image", read_only=True
     )
-    story_images = ImageSerializer(many=True, read_only=True)
+    story_images = ImageSerializer(
+        many=True, read_only=True, source="storyimage_set"  # 모델의 기본 related_name
+    )
+
     is_liked = serializers.SerializerMethodField()
 
     class Meta:
@@ -48,6 +51,31 @@ class StorySerializer(serializers.ModelSerializer):
         return StoryLike.objects.filter(user=user, story=obj).exists()
 
 
+class BasicStorySerializer(serializers.ModelSerializer):
+    user_nickname = serializers.CharField(source="user.nickname", read_only=True)
+    user_profile_image = serializers.ImageField(
+        source="user.profile_image", read_only=True
+    )
+    story_images = ImageSerializer(many=True, read_only=True, source="storyimage_set")
+
+    class Meta:
+        model = Story
+        fields = [
+            "story_id",
+            "user_nickname",
+            "user_profile_image",
+            "marker",
+            "title",
+            "content",
+            "emoji",
+            "view_count",
+            "created_at",
+            "updated_at",
+            "story_images",
+        ]
+        read_only_fields = fields[:]
+
+
 class CommentSerializer(serializers.ModelSerializer):
     user_nickname = serializers.CharField(source="user.nickname", read_only=True)
     user_profile_image = serializers.ImageField(
@@ -66,6 +94,7 @@ class CommentSerializer(serializers.ModelSerializer):
     parent = serializers.IntegerField(
         source="parent.comment_id", read_only=True, help_text="(Optional) 부모 댓글의 ID"
     )
+    is_liked = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -87,6 +116,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "parent_id",  # 요청 시 사용
             "parent",  # 응답 시 사용
             "like_count",
+            "is_liked",
         ]
         read_only_fields = [
             "comment_id",
@@ -97,7 +127,15 @@ class CommentSerializer(serializers.ModelSerializer):
             "updated_at",
             "parent",  # 응답 전용
             "like_count",
+            "is_liked",
         ]
+
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField())
+    def get_is_liked(self, obj):
+        user = self.context.get("request").user
+        if not user or not user.is_authenticated:
+            return False
+        return CommentLike.objects.filter(user=user, comment=obj).exists()
 
 
 class StoryLikeSerializer(serializers.ModelSerializer):
@@ -108,7 +146,16 @@ class StoryLikeSerializer(serializers.ModelSerializer):
 
 
 class CommentLikeSerializer(serializers.ModelSerializer):
+    is_liked = serializers.SerializerMethodField()
+
     class Meta:
         model = CommentLike
-        fields = ["comment", "user", "created_at", "like_count"]
+        fields = ["comment", "user", "created_at", "like_count", "is_liked"]
         read_only_fields = fields
+
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField())
+    def get_is_liked(self, obj):
+        user = self.context.get("request").user
+        if not user or not user.is_authenticated:
+            return False
+        return CommentLike.objects.filter(user=user, comment=obj.comment).exists()

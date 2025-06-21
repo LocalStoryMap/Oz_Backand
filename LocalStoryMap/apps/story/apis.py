@@ -1,3 +1,5 @@
+from django.db.models import ExpressionWrapper, F, FloatField
+from django.db.models.functions import Random
 from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -8,46 +10,73 @@ from rest_framework.views import APIView
 
 from apps.story.models import CommentLike, Story, StoryComment, StoryLike
 from apps.story.serializers import (
+    BasicStorySerializer,
     CommentLikeSerializer,
     CommentSerializer,
+    FullStorySerializer,
     StoryLikeSerializer,
-    StorySerializer,
 )
 
 
 class StoryAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    # 전체 뷰에 “구독자면 전부 OK, 비구독자면 GET만(스토리 조회용)” 정책 적용
+    # permission_classes = [SubscriberPermission]
+    permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = PageNumberPagination
+
+    def get_serializer_class(self):
+        user = self.request.user
+        # is_paid_user로 구독 여부 체크
+        if getattr(user, "is_paid_user", False):
+            return FullStorySerializer
+        return BasicStorySerializer
 
     @swagger_auto_schema(
         operation_summary="스토리 목록 조회",
         responses={
-            200: openapi.Response(description="OK", schema=StorySerializer(many=True))
+            200: openapi.Response(
+                description="OK", schema=FullStorySerializer(many=True)
+            )
         },
         tags=["스토리"],
     )
     def get(self, request, *args, **kwargs):
-        qs = Story.objects.filter(is_deleted=False).order_by("-created_at")
-        paginator = PageNumberPagination()
-        # 아래 두 줄이 전역 설정을 따르게 해 줍니다
-        page = paginator.paginate_queryset(qs, request, view=self)
-        serializer = StorySerializer(page, many=True, context={"request": request})
-        return paginator.get_paginated_response(serializer.data)
+        # 1) 기본 필터링
+        qs = (
+            Story.objects.filter(is_deleted=False)
+            .annotate(rand_val=Random())
+            .annotate(  # 2) 랜덤값+조회수로 composite_score 계산
+                composite_score=ExpressionWrapper(
+                    F("view_count") * 0.7 + F("rand_val") * 0.3,
+                    output_field=FloatField(),
+                )
+            )
+            .order_by("-composite_score")
+        )
+        # 3) 페이징
+        page = self.pagination_class().paginate_queryset(qs, request, view=self)
+        # 4) 동적 Serializer 선택 및 응답
+        SerializerClass = self.get_serializer_class()
+        serializer = SerializerClass(page, many=True, context={"request": request})
+        return self.pagination_class().get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="스토리 생성",
-        request_body=StorySerializer,
+        request_body=FullStorySerializer,
         responses={
-            201: openapi.Response(description="Created", schema=StorySerializer)
+            201: openapi.Response(description="Created", schema=FullStorySerializer)
         },
         tags=["스토리"],
     )
     def post(self, request, *args, **kwargs):
-        # 새로운 스토리를 생성합니다 (제목, 내용, 마커, 이모티콘 등)
-        serializer = StorySerializer(data=request.data, context={"request": request})
+        # is_paid_user=True인 경우만 이 메서드에 진입합니다.
+        serializer = FullStorySerializer(
+            data=request.data, context={"request": request}
+        )
         if serializer.is_valid():
-            serializer.save(user=request.user)  # 현재 로그인된 사용자를 스토리 작성자로 저장
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 
 class StoryDetailAPIView(APIView):
@@ -55,7 +84,7 @@ class StoryDetailAPIView(APIView):
 
     @swagger_auto_schema(
         operation_summary="특정 스토리 조회",
-        responses={200: openapi.Response(description="OK", schema=StorySerializer)},
+        responses={200: openapi.Response(description="OK", schema=FullStorySerializer)},
         tags=["스토리"],
     )
     def get(self, request, story_id, *args, **kwargs):
@@ -63,13 +92,13 @@ class StoryDetailAPIView(APIView):
         story = get_object_or_404(Story, story_id=story_id, is_deleted=False)
         story.view_count += 1
         story.save(update_fields=["view_count"])
-        serializer = StorySerializer(story, context={"request": request})
+        serializer = FullStorySerializer(story, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
         operation_summary="스토리 수정",
-        request_body=StorySerializer,
-        responses={200: openapi.Response(description="OK", schema=StorySerializer)},
+        request_body=FullStorySerializer,
+        responses={200: openapi.Response(description="OK", schema=FullStorySerializer)},
         tags=["스토리"],
     )
     def patch(self, request, story_id, *args, **kwargs):
@@ -82,7 +111,7 @@ class StoryDetailAPIView(APIView):
                 {"detail": "이 스토리를 수정할 권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = StorySerializer(
+        serializer = FullStorySerializer(
             story, data=request.data, partial=True, context={"request": request}
         )
         if serializer.is_valid():
@@ -353,16 +382,18 @@ class MarkerStoryListAPIView(APIView):
     @swagger_auto_schema(
         operation_summary="특정 마커의 스토리 목록 조회",
         responses={
-            200: openapi.Response(description="OK", schema=StorySerializer(many=True))
+            200: openapi.Response(
+                description="OK", schema=FullStorySerializer(many=True)
+            )
         },
         tags=["스토리"],
     )
     def get(self, request, marker_id, *args, **kwargs):
-        # 특정 마커에 해당하는 스토리 목록을 조회합니다 (페이지네이션 적용)
+        # 특정 마커에 해당하는 스토리 목록을 좋아요 순으로 조회합니다 (페이지네이션 적용)
         qs = Story.objects.filter(is_deleted=False, marker_id=marker_id).order_by(
-            "-created_at"
-        )
-        paginator = PageNumberPagination()
-        page = paginator.paginate_queryset(qs, request, view=self)
-        serializer = StorySerializer(page, many=True, context={"request": request})
-        return paginator.get_paginated_response(serializer.data)
+            "-like_count"
+        )[
+            :10
+        ]  # 상위 10개만 잘라서 가져옴
+        serializer = FullStorySerializer(qs, many=True, context={"request": request})
+        return Response(serializer.data)
