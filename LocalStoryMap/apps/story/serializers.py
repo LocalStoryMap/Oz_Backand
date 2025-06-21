@@ -4,12 +4,8 @@ from rest_framework import serializers
 from apps.story.models import CommentLike, Story, StoryComment, StoryLike
 from apps.storyimage.serializers import ImageSerializer
 
-# 전체 목록 조회를 할때 랜덤으로
-# 마커 검색 조회수 + 좋아요 순으로
-# (더 나아가서 알고리즘)
 
-
-class StorySerializer(serializers.ModelSerializer):
+class FullStorySerializer(serializers.ModelSerializer):
     user_nickname = serializers.CharField(source="user.nickname", read_only=True)
     user_profile_image = serializers.ImageField(
         source="user.profile_image", read_only=True
@@ -53,6 +49,31 @@ class StorySerializer(serializers.ModelSerializer):
         if not user or not user.is_authenticated:
             return False
         return StoryLike.objects.filter(user=user, story=obj).exists()
+
+
+class BasicStorySerializer(serializers.ModelSerializer):
+    user_nickname = serializers.CharField(source="user.nickname", read_only=True)
+    user_profile_image = serializers.ImageField(
+        source="user.profile_image", read_only=True
+    )
+    story_images = ImageSerializer(many=True, read_only=True, source="storyimage_set")
+
+    class Meta:
+        model = Story
+        fields = [
+            "story_id",
+            "user_nickname",
+            "user_profile_image",
+            "marker",
+            "title",
+            "content",
+            "emoji",
+            "view_count",
+            "created_at",
+            "updated_at",
+            "story_images",
+        ]
+        read_only_fields = fields[:]
 
 
 class CommentSerializer(serializers.ModelSerializer):
