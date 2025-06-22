@@ -11,7 +11,7 @@ class FullStorySerializer(serializers.ModelSerializer):
         source="user.profile_image", read_only=True
     )
     story_images = ImageSerializer(
-        many=True, read_only=True, source="storyimage_set"  # 모델의 기본 related_name
+        many=True, read_only=True, source="storyimages"  # related_name에 맞게 수정
     )
 
     is_liked = serializers.SerializerMethodField()
@@ -56,7 +56,9 @@ class BasicStorySerializer(serializers.ModelSerializer):
     user_profile_image = serializers.ImageField(
         source="user.profile_image", read_only=True
     )
-    story_images = ImageSerializer(many=True, read_only=True, source="storyimage_set")
+    story_images = ImageSerializer(
+        many=True, read_only=True, source="storyimages"
+    )  # related_name에 맞게 수정
 
     class Meta:
         model = Story

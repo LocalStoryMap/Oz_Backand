@@ -26,6 +26,9 @@ class StoryAPIView(APIView):
 
     def get_serializer_class(self):
         user = self.request.user
+        # 인증되지 않은 사용자 처리
+        if not user or not user.is_authenticated:
+            return BasicStorySerializer
         # is_paid_user로 구독 여부 체크
         if getattr(user, "is_paid_user", False):
             return FullStorySerializer
@@ -45,6 +48,8 @@ class StoryAPIView(APIView):
         # 1) 기본 필터링
         qs = (
             Story.objects.filter(is_deleted=False)
+            .select_related("user")  # N+1 쿼리 방지
+            .prefetch_related("storyimages")  # 스토리 이미지 prefetch
             .annotate(rand_val=Random())
             .annotate(  # 2) 랜덤값+조회수로 composite_score 계산
                 composite_score=ExpressionWrapper(
@@ -54,12 +59,13 @@ class StoryAPIView(APIView):
             )
             .order_by("-composite_score")
         )
-        # 3) 페이징
-        page = self.pagination_class().paginate_queryset(qs, request, view=self)
+        # 3) 페이징 - 한 번만 생성한 paginator 인스턴스 재사용
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(qs, request, view=self)
         # 4) 동적 Serializer 선택 및 응답
         SerializerClass = self.get_serializer_class()
         serializer = SerializerClass(page, many=True, context={"request": request})
-        return self.pagination_class().get_paginated_response(serializer.data)
+        return paginator.get_paginated_response(serializer.data)
 
     @swagger_auto_schema(
         operation_summary="스토리 생성",
@@ -87,6 +93,9 @@ class StoryDetailAPIView(APIView):
 
     def get_serializer_class(self):
         user = self.request.user
+        # 인증되지 않은 사용자 처리
+        if not user or not user.is_authenticated:
+            return BasicStorySerializer
         if getattr(user, "is_paid_user", False):
             return FullStorySerializer
         return BasicStorySerializer
@@ -99,7 +108,11 @@ class StoryDetailAPIView(APIView):
     )
     def get(self, request, story_id, *args, **kwargs):
         # 특정 스토리를 조회합니다 (조회수 증가 포함)
-        story = get_object_or_404(Story, story_id=story_id, is_deleted=False)
+        story = get_object_or_404(
+            Story.objects.select_related("user").prefetch_related("storyimages"),
+            story_id=story_id,
+            is_deleted=False,
+        )
         story.view_count += 1
         story.save(update_fields=["view_count"])
         SerializerClass = self.get_serializer_class()
@@ -394,6 +407,9 @@ class MarkerStoryListAPIView(APIView):
 
     def get_serializer_class(self):
         user = self.request.user
+        # 인증되지 않은 사용자 처리
+        if not user or not user.is_authenticated:
+            return BasicStorySerializer
         if getattr(user, "is_paid_user", False):
             return FullStorySerializer
         return BasicStorySerializer
@@ -410,8 +426,11 @@ class MarkerStoryListAPIView(APIView):
     )
     def get(self, request, marker_id, *args, **kwargs):
         # 특정 마커에 해당하는 스토리 목록을 좋아요 순으로 조회합니다 (상위 10개만 반환)
-        qs = Story.objects.filter(is_deleted=False, marker_id=marker_id).order_by(
-            "-like_count"
+        qs = (
+            Story.objects.filter(is_deleted=False, marker_id=marker_id)
+            .select_related("user")
+            .prefetch_related("storyimages")
+            .order_by("-like_count")
         )[:10]
         SerializerClass = self.get_serializer_class()
         serializer = SerializerClass(qs, many=True, context={"request": request})
