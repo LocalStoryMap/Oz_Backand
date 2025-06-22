@@ -343,7 +343,9 @@ class CommentLikeAPIView(APIView):
             StoryComment, comment_id=comment_id, is_deleted=False, story=story
         )
         likes = CommentLike.objects.filter(comment=comment)
-        serializer = CommentLikeSerializer(likes, many=True)
+        serializer = CommentLikeSerializer(
+            likes, many=True, context={"request": request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
@@ -373,7 +375,7 @@ class CommentLikeAPIView(APIView):
         comment.like_count += 1
         comment.save(update_fields=["like_count"])
 
-        serializer = CommentLikeSerializer(comment_like)
+        serializer = CommentLikeSerializer(comment_like, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
