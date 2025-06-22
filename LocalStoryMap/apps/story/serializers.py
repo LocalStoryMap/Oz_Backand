@@ -93,9 +93,7 @@ class CommentSerializer(serializers.ModelSerializer):
         help_text="(Optional) 부모 댓글의 ID",
     )
     # 응답(response)에서는 parent로 부모 댓글 ID만 보여줍니다.
-    parent = serializers.IntegerField(
-        source="parent.comment_id", read_only=True, help_text="(Optional) 부모 댓글의 ID"
-    )
+    parent = serializers.SerializerMethodField(help_text="(Optional) 부모 댓글의 ID")
     is_liked = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
@@ -104,6 +102,12 @@ class CommentSerializer(serializers.ModelSerializer):
         if "story" in self.context:
             story = self.context["story"]
             self.fields["parent_id"].queryset = StoryComment.objects.filter(story=story)
+
+    def get_parent(self, obj):
+        """부모 댓글 ID를 안전하게 반환"""
+        if obj.parent:
+            return obj.parent.comment_id
+        return None
 
     class Meta:
         model = StoryComment
@@ -149,11 +153,16 @@ class StoryLikeSerializer(serializers.ModelSerializer):
 
 class CommentLikeSerializer(serializers.ModelSerializer):
     is_liked = serializers.SerializerMethodField()
+    parent = serializers.SerializerMethodField(help_text="(Optional) 부모 댓글의 ID")
 
     class Meta:
         model = CommentLike
-        fields = ["comment", "user", "created_at", "like_count", "is_liked"]
+        fields = ["comment", "parent", "user", "created_at", "like_count", "is_liked"]
         read_only_fields = fields
+
+    def get_parent(self, obj):
+        # 댓글(obj.comment)이 parent를 갖고 있으면 그 ID를, 아니면 None
+        return obj.comment.parent.comment_id if obj.comment.parent else None
 
     @swagger_serializer_method(serializer_or_field=serializers.BooleanField())
     def get_is_liked(self, obj):
