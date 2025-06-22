@@ -5,14 +5,13 @@ from typing import Any, Dict, Optional, cast
 
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
-from django.db import models
-from django.db.models.query import QuerySet
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.paymenthistory.models import PaymentHistory, PaymentStatus
 from apps.subscribes.models import Subscribe
+from apps.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +184,10 @@ class PaymentService:
                 expires_at=expires_at,
                 is_active=True,
             )
+            # 구독 생성 성공 시 is_paid_user 동기화
+            user = User.objects.get(id=user_id)
+            user.is_paid_user = True
+            user.save(update_fields=["is_paid_user"])
             logger.info(
                 f"구독 생성 성공: user_id={user_id}, "
                 f"imp_uid={payment_history.imp_uid}, "
@@ -200,22 +203,3 @@ class PaymentService:
             # 구독 생성 실패 시 결제 이력도 롤백
             payment_history.delete()
             raise ValidationError("구독 생성 중 오류가 발생했습니다.")
-
-
-class Command(BaseCommand):
-    help = "만료일 지난 구독은 is_active=False로 일괄 처리"
-
-    def handle(self, *args, **options):
-        now = timezone.now()
-        expired_count = Subscribe.objects.filter(
-            is_active=True, expires_at__lt=now
-        ).update(is_active=False)
-        self.stdout.write(f"Expired {expired_count} subscriptions.")
-
-
-class PaymentHistoryManager(models.Manager):
-    """결제 이력 매니저"""
-
-    def get_queryset(self) -> QuerySet[PaymentHistory]:
-        """기본 쿼리셋 (삭제되지 않은 결제 이력만)"""
-        return super().get_queryset().filter(is_delete=False)
