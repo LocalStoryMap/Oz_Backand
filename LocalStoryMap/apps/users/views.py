@@ -1,5 +1,7 @@
 from urllib.parse import unquote
 
+import requests
+from django.core.files.base import ContentFile
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -74,17 +76,21 @@ class KakaoLoginView(APIView):
                     set_nick = not existing.nickname and bool(nickname)
                     set_image = not existing.profile_image and bool(profile_image)
 
-                    if set_nick:
-                        existing.nickname = nickname
-                    if set_image:
-                        existing.profile_image = profile_image
-
                     update_fields = ["provider", "social_id", "last_login"]
                     if set_nick:
+                        existing.nickname = nickname
                         update_fields.append("nickname")
                     if set_image:
+                        resp = requests.get(profile_image)
+                        if resp.status_code == 200:
+                            ext = profile_image.split("?")[0].rsplit(".", 1)[-1]
+                            fname = f"profile_{existing.id}.{ext}"
+                            existing.profile_image.save(
+                                fname,
+                                ContentFile(resp.content),
+                                save=False,
+                            )
                         update_fields.append("profile_image")
-
                     existing.save(update_fields=update_fields)
                     user = existing
                     created = False
@@ -95,8 +101,15 @@ class KakaoLoginView(APIView):
                         nickname=nickname or "",
                         provider="kakao",
                         social_id=social_id,
-                        profile_image=profile_image or "",
                     )
+                    if profile_image:
+                        resp = requests.get(profile_image)
+                        if resp.status_code == 200:
+                            ext = profile_image.split("?")[0].rsplit(".", 1)[-1]
+                            fname = f"profile_{user.id}.{ext}"
+                            user.profile_image.save(
+                                fname, ContentFile(resp.content), save=True
+                            )
                     created = True
 
             # 4) JWT 토큰 발급
@@ -167,9 +180,20 @@ class GoogleLoginView(APIView):
         if user:
             # 기존 유저: nickname, 프로필, 마지막 로그인 시간 업데이트
             user.nickname = name or user.nickname
-            user.profile_image = picture or user.profile_image
             user.last_login = timezone.now()
-            user.save(update_fields=["nickname", "profile_image", "last_login"])
+            if picture and not user.profile_image:
+                resp = requests.get(picture)
+                if resp.status_code == 200:
+                    ext = picture.split("?")[0].rsplit(".", 1)[-1]
+                    fname = f"profile_{user.id}.{ext}"
+                    user.profile_image.save(
+                        fname, ContentFile(resp.content), save=False
+                    )
+                    update_fields = ["nickname", "last_login", "profile_image"]
+            else:
+                update_fields = ["nickname", "profile_image", "last_login"]
+
+            user.save(update_fields=update_fields)
             created = False
         else:
             # 이메일로 가입된 유저가 있는지 확인
@@ -182,18 +206,23 @@ class GoogleLoginView(APIView):
                 set_nick = not existing.nickname and bool(name)
                 set_image = not existing.profile_image and bool(picture)
 
-                if set_nick:
-                    existing.nickname = name
-                if set_image:
-                    existing.profile_image = picture
-
                 update_fields = ["provider", "social_id", "last_login"]
                 if set_nick:
+                    existing.nickname = name
                     update_fields.append("nickname")
                 if set_image:
+                    resp = requests.get(picture)
+                    if resp.status_code == 200:
+                        ext = picture.split("?")[0].rsplit(".", 1)[-1]
+                        fname = f"profile_{existing.id}.{ext}"
+                        existing.profile_image.save(
+                            fname,
+                            ContentFile(resp.content),
+                            save=False,
+                        )
                     update_fields.append("profile_image")
-
                 existing.save(update_fields=update_fields)
+
                 user = existing
                 created = False
             else:
@@ -203,9 +232,17 @@ class GoogleLoginView(APIView):
                     nickname=name or "",
                     provider="google",
                     social_id=google_sub,
-                    profile_image=picture,
                 )
                 created = True
+
+                if picture:
+                    resp = requests.get(picture)
+                    if resp.status_code == 200:
+                        ext = picture.split("?")[0].rsplit(".", 1)[-1]
+                        fname = f"profile_{user.id}.{ext}"
+                        user.profile_image.save(
+                            fname, ContentFile(resp.content), save=True
+                        )
 
         # 5) JWT 발급 및 응답
         refresh = RefreshToken.for_user(user)
