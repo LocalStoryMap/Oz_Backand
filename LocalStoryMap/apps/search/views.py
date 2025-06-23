@@ -1,6 +1,6 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -16,7 +16,7 @@ from .serializers import (
 
 
 class SearchView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     @swagger_auto_schema(
         tags=["search"],
@@ -42,11 +42,11 @@ class SearchView(APIView):
         user_results = UserSearchResultSerializer(users, many=True).data
 
         # 마커 제목 검색
-        markers = Marker.objects.filter(title__icontains=query)
+        markers = Marker.objects.filter(marker_name__icontains=query)
         marker_results = MarkerSearchResultSerializer(markers, many=True).data
 
         # 스토리 제목으로 검색
-        stories = Story.objects.filter(title__icontains=query)
+        stories = Story.objects.filter(story__icontains=query)
         story_results = StorySearchResultSerializer(stories, many=True).data
 
         return Response(
