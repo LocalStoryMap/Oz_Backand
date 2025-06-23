@@ -7,8 +7,6 @@ from apps.users.models import User
 
 class StorySearchResultSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(source="story_id", read_only=True)
-    title = serializers.CharField(source="story", read_only=True)
-    content = serializers.CharField(source="summary_text", read_only=True)
 
     class Meta:
         model = Story
