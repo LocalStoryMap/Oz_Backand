@@ -86,6 +86,53 @@ class StoryAPIView(APIView):
         return Response(serializer.errors, status=400)
 
 
+class MyStoryListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = PageNumberPagination
+
+    def get_serializer_class(self):
+        user = self.request.user
+        # is_paid_user로 구독 여부 체크
+        if getattr(user, "is_paid_user", False):
+            return FullStorySerializer
+        return BasicStorySerializer
+
+    @swagger_auto_schema(
+        operation_summary="내가 쓴 스토리 목록 조회",
+        operation_description="현재 로그인한 사용자가 작성한 스토리 목록을 조회합니다.",
+        manual_parameters=[
+            openapi.Parameter(
+                "page",
+                openapi.IN_QUERY,
+                description="페이지 번호",
+                type=openapi.TYPE_INTEGER,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="OK", schema=FullStorySerializer(many=True)
+            )
+        },
+        tags=["스토리"],
+    )
+    def get(self, request, *args, **kwargs):
+        # 현재 로그인한 사용자의 스토리를 필터링
+        qs = (
+            Story.objects.filter(user=request.user, is_deleted=False)
+            .select_related("user")
+            .prefetch_related("storyimages")
+            .order_by("-created_at")
+        )
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(qs, request, view=self)
+
+        SerializerClass = self.get_serializer_class()
+        serializer = SerializerClass(page, many=True, context={"request": request})
+
+        return paginator.get_paginated_response(serializer.data)
+
+
 class StoryDetailAPIView(APIView):
     # 전체 뷰에 "구독자면 전부 OK, 비구독자면 GET만(스토리 조회용)" 정책 적용
     # permission_classes = [SubscriberPermission]
