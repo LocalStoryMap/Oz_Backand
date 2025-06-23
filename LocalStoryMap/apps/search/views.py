@@ -5,10 +5,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.marker.models import Marker
-from apps.users.models import User
 from apps.story.models import Story
+from apps.users.models import User
 
-from .serializers import MarkerSearchResultSerializer, UserSearchResultSerializer ,StorySearchResultSerializer
+from .serializers import (
+    MarkerSearchResultSerializer,
+    StorySearchResultSerializer,
+    UserSearchResultSerializer,
+)
 
 
 class SearchView(APIView):
