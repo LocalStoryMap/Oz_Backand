@@ -59,6 +59,7 @@ class BasicStorySerializer(serializers.ModelSerializer):
     story_images = ImageSerializer(
         many=True, read_only=True, source="storyimages"
     )  # related_name에 맞게 수정
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
@@ -75,8 +76,16 @@ class BasicStorySerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "story_images",
+            "is_liked",
         ]
         read_only_fields = fields[:]
+
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField())
+    def get_is_liked(self, obj):
+        user = self.context.get("request").user
+        if not user or not user.is_authenticated:
+            return False
+        return StoryLike.objects.filter(user=user, story=obj).exists()
 
 
 class CommentSerializer(serializers.ModelSerializer):
