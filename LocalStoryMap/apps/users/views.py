@@ -2,6 +2,7 @@ from urllib.parse import unquote
 
 import requests
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -9,6 +10,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
@@ -316,12 +318,6 @@ class LogoutView(APIView):
 
 
 class WithdrawView(APIView):
-    """
-    회원탈퇴 API
-    - 인증된 유저만 호출할 수 있습니다.
-    - DELETE 메서드로 호출 시, 해당 user 인스턴스를 삭제합니다.
-    """
-
     permission_classes = [permissions.IsAuthenticated]
 
     @swagger_auto_schema(
@@ -330,25 +326,37 @@ class WithdrawView(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 "refresh": openapi.Schema(
-                    type=openapi.TYPE_STRING, description="리프레시 토큰"
+                    type=openapi.TYPE_STRING, description="리프레시 토큰 (필수)"
                 ),
             },
-            required=[],
+            required=["refresh"],
         ),
         responses={
             204: openapi.Response(description="회원 탈퇴 성공"),
-            400: openapi.Response(description="요청 형식이 잘못된 경우"),
+            400: openapi.Response(description="refresh 토큰을 전달해주세요."),
         },
     )
     def delete(self, request):
-        user = request.user
-        # 리프레시 토큰을 블랙리스트에 넣움
         refresh_token = request.data.get("refresh")
-        if refresh_token:
-            RefreshToken(refresh_token).blacklist()
-        # 2) 사용자 계정 삭제
-        user.delete()
-        # 3) 204 No Content 응답
+        if not refresh_token:
+            return Response(
+                {"detail": "refresh 토큰을 전달해주세요."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = request.user
+        try:
+            with transaction.atomic():
+                # 1) 토큰 블랙리스트 (모든 발급 토큰 일괄 처리)
+                for token_obj in OutstandingToken.objects.filter(user=user):
+                    token_obj.blacklist()
+                # 2) 사용자 계정 삭제
+                user.delete()
+        except Exception as exc:
+            return Response(
+                {"detail": "회원 탈퇴 처리 중 오류가 발생했습니다.", "error": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
