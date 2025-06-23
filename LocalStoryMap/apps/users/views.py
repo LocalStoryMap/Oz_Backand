@@ -350,15 +350,19 @@ class WithdrawView(APIView):
         user = request.user
         try:
             with transaction.atomic():
-                # 0) 클라이언트 토큰도 블랙리스트
+                # 0) 클라이언트가 보낸 refresh 토큰도 블랙리스트
                 try:
                     RefreshToken(refresh_token).blacklist()
                 except Exception:
                     pass
 
-                # 1) OutstandingToken 일괄 블랙리스트
+                # 1) OutstandingToken을 순회하며 개별 예외 무시하고 블랙리스트
                 for outstanding in OutstandingToken.objects.filter(user=user):
-                    RefreshToken(str(outstanding.token)).blacklist()
+                    try:
+                        RefreshToken(str(outstanding.token)).blacklist()
+                    except Exception:
+                        # 이미 블랙리스트된 토큰이거나 기타 오류인 경우 무시
+                        continue
 
                 # 2) 회원 계정 삭제
                 user.delete()
