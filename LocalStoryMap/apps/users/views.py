@@ -67,21 +67,25 @@ class KakaoLoginView(APIView):
                 # 다른 provider로 가입된 동일 이메일이 있는지 확인
                 existing = User.objects.filter(email=email).first()
                 if existing:
-                    # 이메일 중복 사용자 -> kakao 정보로 업데이트
-                    existing.nickname = nickname or existing.nickname
+                    # 이메일 중복 사용자 -> 로그인만 갱신, 프로필 정보는 유지
                     existing.provider = "kakao"
                     existing.social_id = social_id
-                    existing.profile_image = profile_image or existing.profile_image
                     existing.last_login = timezone.now()
-                    existing.save(
-                        update_fields=[
-                            "nickname",
-                            "provider",
-                            "social_id",
-                            "profile_image",
-                            "last_login",
-                        ]
-                    )
+                    set_nick = not existing.nickname and bool(nickname)
+                    set_image = not existing.profile_image and bool(profile_image)
+
+                    if set_nick:
+                        existing.nickname = nickname
+                    if set_image:
+                        existing.profile_image = profile_image
+
+                    update_fields = ["provider", "social_id", "last_login"]
+                    if set_nick:
+                        update_fields.append("nickname")
+                    if set_image:
+                        update_fields.append("profile_image")
+
+                    existing.save(update_fields=update_fields)
                     user = existing
                     created = False
                 else:
@@ -171,20 +175,25 @@ class GoogleLoginView(APIView):
             # 이메일로 가입된 유저가 있는지 확인
             existing = User.objects.filter(email=email).first()
             if existing:
-                existing.nickname = name or existing.nickname
                 existing.provider = "google"
                 existing.social_id = google_sub
-                existing.profile_image = picture or existing.profile_image
                 existing.last_login = timezone.now()
-                existing.save(
-                    update_fields=[
-                        "nickname",
-                        "provider",
-                        "social_id",
-                        "profile_image",
-                        "last_login",
-                    ]
-                )
+
+                set_nick = not existing.nickname and bool(name)
+                set_image = not existing.profile_image and bool(picture)
+
+                if set_nick:
+                    existing.nickname = name
+                if set_image:
+                    existing.profile_image = picture
+
+                update_fields = ["provider", "social_id", "last_login"]
+                if set_nick:
+                    update_fields.append("nickname")
+                if set_image:
+                    update_fields.append("profile_image")
+
+                existing.save(update_fields=update_fields)
                 user = existing
                 created = False
             else:
