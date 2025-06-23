@@ -46,7 +46,7 @@ class SearchView(APIView):
         marker_results = MarkerSearchResultSerializer(markers, many=True).data
 
         # 스토리 제목으로 검색
-        stories = Story.objects.filter(story__icontains=query)
+        stories = Story.objects.filter(title__icontains=query)
         story_results = StorySearchResultSerializer(stories, many=True).data
 
         return Response(
