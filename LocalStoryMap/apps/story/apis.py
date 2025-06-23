@@ -221,13 +221,11 @@ class CommentListAPIView(APIView):
         tags=["댓글"],
     )
     def get(self, request, story_id, *args, **kwargs):
-        # 특정 스토리의 댓글 목록을 조회합니다 (대댓글 포함)
+        # 특정 스토리의 모든 댓글(최상위+대댓글)을 조회합니다
         story = get_object_or_404(Story, story_id=story_id, is_deleted=False)
-        comments = StoryComment.objects.filter(
-            story=story, is_deleted=False, parent__isnull=True
-        ).order_by(
+        comments = StoryComment.objects.filter(story=story, is_deleted=False).order_by(
             "created_at"
-        )  # 최상위 댓글만 조회
+        )  # 모든 댓글 조회
         serializer = CommentSerializer(
             comments, many=True, context={"request": request}
         )
