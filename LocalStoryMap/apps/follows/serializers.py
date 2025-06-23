@@ -37,6 +37,9 @@ class FollowCreateSerializer(serializers.Serializer):
             raise serializers.ValidationError("이미 팔로우 중입니다.")
         return follow
 
+    def to_representation(self, instance):
+        return FollowSerializer(instance, context=self.context).data
+
 
 class FollowUserSerializer(serializers.ModelSerializer):
     class Meta:
