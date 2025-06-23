@@ -71,6 +71,7 @@ class BasicStorySerializer(serializers.ModelSerializer):
             "content",
             "emoji",
             "view_count",
+            "like_count",
             "created_at",
             "updated_at",
             "story_images",
