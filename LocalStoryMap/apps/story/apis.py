@@ -191,14 +191,18 @@ class StoryDetailAPIView(APIView):
         tags=["스토리"],
     )
     def get(self, request, story_id, *args, **kwargs):
-        # 특정 스토리를 조회합니다 (조회수 증가 포함)
+        # 특정 스토리를 조회합니다 (increase_view 파라미터가 true일 때만 조회수 증가)
+        increase_view = (
+            request.query_params.get("increase_view", "false").lower() == "true"
+        )
         story = get_object_or_404(
             Story.objects.select_related("user").prefetch_related("storyimages"),
             story_id=story_id,
             is_deleted=False,
         )
-        story.view_count += 1
-        story.save(update_fields=["view_count"])
+        if increase_view:
+            story.view_count += 1
+            story.save(update_fields=["view_count"])
         SerializerClass = self.get_serializer_class()
         serializer = SerializerClass(story, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
