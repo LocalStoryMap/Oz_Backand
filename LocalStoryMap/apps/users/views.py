@@ -1,3 +1,4 @@
+import logging
 from urllib.parse import unquote
 
 import requests
@@ -317,6 +318,9 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
 
+logger = logging.getLogger(__name__)
+
+
 class WithdrawView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -346,15 +350,23 @@ class WithdrawView(APIView):
         user = request.user
         try:
             with transaction.atomic():
-                # 1) 토큰 블랙리스트 (모든 발급 토큰 일괄 처리)
-                for token_obj in OutstandingToken.objects.filter(user=user):
-                    token_obj.blacklist()
-                # 2) 사용자 계정 삭제
+                # 0) 클라이언트 토큰도 블랙리스트
+                try:
+                    RefreshToken(refresh_token).blacklist()
+                except Exception:
+                    pass
+
+                # 1) OutstandingToken 일괄 블랙리스트
+                for outstanding in OutstandingToken.objects.filter(user=user):
+                    RefreshToken(str(outstanding.token)).blacklist()
+
+                # 2) 회원 계정 삭제
                 user.delete()
+
         except Exception as exc:
+            logger.error("WithdrawView error", exc_info=exc)
             return Response(
-                {"detail": "회원 탈퇴 처리 중 오류가 발생했습니다.", "error": str(exc)},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"detail": "회원 탈퇴 처리 중 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST
             )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
