@@ -175,26 +175,35 @@ class GoogleLoginView(APIView):
         name = user_info.get("name")
         picture = user_info.get("picture", "")
 
-        # 2) provider="google" & social_id 일치하는 유저 존재 확인
+        # 2) 기존 Google 유저가 있는지 조회
         user = User.objects.filter(provider="google", social_id=google_sub).first()
         if user:
-            # 기존 유저: nickname, 프로필, 마지막 로그인 시간 업데이트
-            user.nickname = name or user.nickname
+            update_fields = []
+            # 2-1) 마지막 로그인 시간은 항상 갱신
             user.last_login = timezone.now()
+            update_fields.append("last_login")
+
+            # 2-2) 닉네임이 비어 있을 때만 Google 이름으로 설정
+            if not user.nickname and name:
+                user.nickname = name
+                update_fields.append("nickname")
+
+            # 2-3) 프로필 이미지가 없을 때만 설정
             if picture and not user.profile_image:
                 resp = requests.get(picture)
                 if resp.status_code == 200:
                     ext = picture.split("?")[0].rsplit(".", 1)[-1]
                     fname = f"profile_{user.id}.{ext}"
                     user.profile_image.save(
-                        fname, ContentFile(resp.content), save=False
+                        fname,
+                        ContentFile(resp.content),
+                        save=False,
                     )
-                    update_fields = ["nickname", "last_login", "profile_image"]
-            else:
-                update_fields = ["nickname", "profile_image", "last_login"]
+                update_fields.append("profile_image")
 
             user.save(update_fields=update_fields)
             created = False
+
         else:
             # 이메일로 가입된 유저가 있는지 확인
             existing = User.objects.filter(email=email).first()
