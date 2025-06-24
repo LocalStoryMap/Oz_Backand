@@ -24,7 +24,7 @@ class FollowViewSet(
 
     def get_permissions(self):
         # create 액션만 무조건 익명 허용 (테스트용)
-        if self.action == "create":
+        if self.action in ("list", "create", "destroy"):
             return [AllowAny()]
         return [IsAuthenticated()]
 
