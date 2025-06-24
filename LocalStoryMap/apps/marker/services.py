@@ -1,5 +1,6 @@
 # apps/marker/services.py
 import math
+from typing import Any, cast
 
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -17,7 +18,9 @@ class MarkerService:
         return get_object_or_404(Marker, pk=marker_id)
 
     @staticmethod
-    def list_markers(filters: dict, page: int = 1, limit: int = 20):
+    def list_markers(
+        filters: dict, page: int = 1, limit: int = 20, sort: str = "latest"
+    ):
         # 조건에 맞는 마커 목록 조회 (필터링 및 페이지네이션)
         queryset = Marker.objects.all().order_by("-created_at")
 
@@ -36,6 +39,34 @@ class MarkerService:
 
         if story_id := filters.get("story_id"):
             queryset = queryset.filter(story_id=story_id)
+
+        # 정렬 옵션 처리
+        sort_option = filters.get("sort", "latest")
+        if sort_option == "popular":
+            queryset = queryset.order_by("-like_count", "-id")
+        elif sort_option == "latest":
+            queryset = queryset.order_by("-id")
+        elif sort_option == "distance":
+            lat = filters.get("latitude")
+            lng = filters.get("longitude")
+            if lat is not None and lng is not None:
+                try:
+                    # 타입 안정성 확보: float 변환 시도
+                    lat_float = float(cast(Any, lat))
+                    lng_float = float(cast(Any, lng))
+                except (TypeError, ValueError):
+                    # 변환 실패 시 기본 정렬 사용
+                    target_list = list(queryset.order_by("-id"))
+                else:
+                    marker_list = list(queryset)
+                    marker_list.sort(
+                        key=lambda m: haversine(
+                            (lat_float, lng_float),
+                            (float(m.latitude), float(m.longitude)),
+                            unit=Unit.KILOMETERS,
+                        )
+                    )
+                    target_list = marker_list
 
         # 위치 기반 필터 (단순 거리 계산 예시)
         final_markers = []
@@ -68,7 +99,11 @@ class MarkerService:
             # 위치 필터가 없으면 전체 쿼리셋을 대상으로 함
             target_list = list(queryset)
 
-        paginator = Paginator(target_list, limit)
+        # 페이지네이션
+        if sort_option == "distance":
+            paginator = Paginator(target_list, limit)
+        else:
+            paginator = Paginator(list(queryset), limit)
         page_obj = paginator.get_page(page)
 
         return {
