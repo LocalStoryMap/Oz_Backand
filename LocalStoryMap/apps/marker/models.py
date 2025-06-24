@@ -1,8 +1,15 @@
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models import F
 from storages.backends.s3boto3 import S3Boto3Storage
 
-s3_storage = S3Boto3Storage()
+
+def select_marker_storage():
+    if getattr(settings, "USE_S3_STORAGE", False):
+        return S3Boto3Storage()
+    else:
+        return FileSystemStorage()
 
 
 class Marker(models.Model):
@@ -30,7 +37,7 @@ class Marker(models.Model):
     )
     image = models.ImageField(
         upload_to="markers/",  # 업로드될 경로 S3 추후 적용
-        storage=s3_storage,
+        storage=select_marker_storage,
         blank=True,
         null=True,
         verbose_name="마커 이미지",
