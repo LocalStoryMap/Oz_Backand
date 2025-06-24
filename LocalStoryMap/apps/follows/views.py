@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, viewsets
@@ -19,17 +20,29 @@ class FollowViewSet(
     DELETE /api/follows/{pk}/ : 언팔로우
     """
 
-    # 기본적으로 로그인 필요
+    # 기본적으로 인증 필요
     permission_classes = [IsAuthenticated]
+    # 페이지네이션 비활성화
+    pagination_class = None
 
     def get_permissions(self):
-        # create 액션만 무조건 익명 허용 (테스트용)
+        # list, create, destroy 액션은 테스트용 익명 허용
         if self.action in ("list", "create", "destroy"):
             return [AllowAny()]
         return [IsAuthenticated()]
 
+    def get_queryset(self):
+        # 로그인 사용자 팔로우 목록, 익명은 테스트용 유저(pk=4)로 대체
+        user = self.request.user
+        if not getattr(user, "is_authenticated", False):
+            try:
+                user = get_user_model().objects.get(pk=4)
+            except get_user_model().DoesNotExist:
+                return Follow.objects.none()
+        return Follow.objects.filter(follower=user)
+
     def get_serializer_class(self):
-        # create 시엔 FollowCreateSerializer, 그 외에는 FollowSerializer
+        # create는 FollowCreateSerializer, 나머지는 FollowSerializer 사용
         if self.action == "create":
             return FollowCreateSerializer
         return FollowSerializer
