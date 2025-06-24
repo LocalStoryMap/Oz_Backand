@@ -18,11 +18,12 @@ class MarkerViewSet(viewsets.ViewSet):
         filter_serializer = MarkerListFilterSerializer(data=request.query_params)
         filter_serializer.is_valid(raise_exception=True)
 
+        sort = request.query_params.get("sort", "latest")
         page = int(request.query_params.get("page", 1))
         limit = int(request.query_params.get("limit", 20))
 
         result = MarkerService.list_markers(
-            filters=filter_serializer.validated_data, page=page, limit=limit
+            filters=filter_serializer.validated_data, page=page, limit=limit, sort=sort
         )
 
         serialized_data = MarkerSerializer(
