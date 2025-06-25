@@ -1,6 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from .models import NotificationSetting
 from .serializers import NotificationSettingSerializer
@@ -28,7 +29,20 @@ class NotificationSettingViewSet(viewsets.ModelViewSet):
         operation_description="사용자의 알림 설정을 생성하거나 수정합니다.",
     )
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        user = request.user
+        setting_type = request.data.get("type")
+        enabled = request.data.get("enabled", True)
+
+        # user, type 조합으로 upsert
+        instance, created = NotificationSetting.objects.update_or_create(
+            user=user, type=setting_type, defaults={"enabled": enabled}
+        )
+
+        serializer = self.get_serializer(instance)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
     @swagger_auto_schema(
         tags=["notifications"],
@@ -55,10 +69,4 @@ class NotificationSettingViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
-        user = self.request.user
-        if not user.is_authenticated:
-            return NotificationSetting.objects.none()
-        return NotificationSetting.objects.filter(user=user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        return NotificationSetting.objects.filter(user=self.request.user)
