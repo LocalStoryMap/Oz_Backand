@@ -11,7 +11,7 @@ from .serializers import BookmarkSerializer
     name="list",
     decorator=swagger_auto_schema(
         tags=["북마크"],
-        operation_summary="스토리 북마크",
+        operation_summary="스토리 북마크 목록 조회",
         responses={
             200: openapi.Response(
                 description="북마크 불러오기 성공.", schema=BookmarkSerializer(many=True)
@@ -26,7 +26,7 @@ from .serializers import BookmarkSerializer
         operation_summary="스토리 북마크 추가",
         responses={
             201: openapi.Response(
-                description="북마크 추가됨.", schema=BookmarkSerializer(many=True)
+                description="북마크 추가됨.", schema=BookmarkSerializer()  # 단일 객체 응답
             )
         },
     ),
@@ -36,11 +36,7 @@ from .serializers import BookmarkSerializer
     decorator=swagger_auto_schema(
         tags=["북마크"],
         operation_summary="스토리 북마크 삭제",
-        responses={
-            204: openapi.Response(
-                description="북마크 삭제됨.", schema=BookmarkSerializer(many=True)
-            )
-        },
+        responses={204: openapi.Response(description="북마크 삭제됨.", schema=None)},
     ),
 )
 class BookmarkViewSet(
@@ -67,4 +63,6 @@ class BookmarkViewSet(
         return Bookmark.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        # nested URL에서 story_pk를 꺼내와 바인딩
+        story_id = self.kwargs.get("story_pk")
+        serializer.save(user=self.request.user, story_id=story_id)
