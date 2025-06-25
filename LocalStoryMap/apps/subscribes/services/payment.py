@@ -114,7 +114,6 @@ class PaymentService:
         Args:
             imp_uid: 포트원 결제 고유번호
             merchant_uid: 가맹점 주문번호
-            user_id: 사용자 ID
 
         Returns:
             tuple[PaymentResult, Subscribe]: (결제 검증 결과, 생성된 구독)
@@ -126,31 +125,28 @@ class PaymentService:
         # 1. 결제 내역 조회
         payment = self.imp_client.get_payment(imp_uid)
 
-        # 2. 결제 상태 검증
+        # 2. 결제 상태/금액/merchant_uid 검증 (프론트에서 받은 값은 imp_uid, merchant_uid만 사용)
         if payment.get("status") != "paid":
             raise PaymentVerificationError(
                 f"결제가 완료되지 않았습니다. (상태: {payment.get('status')})"
             )
-
-        # 3. 금액 검증
+        if payment.get("merchant_uid") != merchant_uid:
+            raise PaymentVerificationError("merchant_uid가 일치하지 않습니다.")
+        # 금액 검증은 포트원에서 조회한 값과 서버 설정값 비교
         amount = int(payment.get("amount", 0))
         if amount != settings.SINGLE_PLAN_PRICE:
             raise PaymentVerificationError(
                 f"결제 금액이 일치하지 않습니다. (기대: {settings.SINGLE_PLAN_PRICE}, 실제: {amount})"
             )
 
-        # 4. merchant_uid 검증
-        if payment.get("merchant_uid") != merchant_uid:
-            raise PaymentVerificationError("merchant_uid가 일치하지 않습니다.")
-
-        # 5. PaymentResult 생성
+        # 3. PaymentResult 생성
         result = PaymentResult.from_payment(payment)
 
-        # 6. 기존 활성 구독 확인
+        # 4. 기존 활성 구독 확인
         if Subscribe.objects.filter(user_id=user_id, is_active=True).exists():
             raise ValidationError("이미 활성화된 구독이 있습니다.")
 
-        # 7. 결제 이력 생성
+        # 5. 결제 이력 생성
         try:
             payment_history = PaymentHistory.objects.create(
                 user_id=user_id,
@@ -175,7 +171,7 @@ class PaymentService:
             )
             raise PaymentVerificationError("결제 이력 생성 중 오류가 발생했습니다.")
 
-        # 8. 구독 생성
+        # 6. 구독 생성
         try:
             expires_at = timezone.now() + timedelta(days=30)
             subscription = Subscribe.objects.create(
