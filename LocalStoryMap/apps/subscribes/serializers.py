@@ -12,6 +12,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
     """구독 시리얼라이저"""
 
     user_email = serializers.EmailField(source="user.email", read_only=True)
+    is_paid_user = serializers.BooleanField(source="user.is_paid_user", read_only=True)
 
     class Meta:
         model = Subscribe
@@ -24,6 +25,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
             "is_active",
             "start_at",
             "expires_at",
+            "is_paid_user",
         ]
         read_only_fields = [
             "subscribe_id",
@@ -32,6 +34,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
             "is_active",
             "start_at",
             "expires_at",
+            "is_paid_user",
         ]
 
 
