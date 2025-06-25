@@ -321,8 +321,17 @@ GOOGLE_OAUTH2_REDIRECT_URI = os.getenv(
 # ─── 캐시 설정 ────────────────────────────────────────────
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": [
+            "redis://redisc-35hu0n.vpc-cdb.ntruss.com:6379/0",
+            "redis://redisc-35hu0q.vpc-cdb.ntruss.com:6379/0",
+            "redis://redisc-35hu0t.vpc-cdb.ntruss.com:6379/0",
+        ],
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # 필요하면 비밀번호 추가:
+            # "PASSWORD": "<your-redis-password>",
+        },
     }
 }
 
