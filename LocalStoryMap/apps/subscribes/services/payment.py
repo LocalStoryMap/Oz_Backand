@@ -33,6 +33,20 @@ class PaymentResult:
     @classmethod
     def from_payment(cls, payment: Dict[str, Any]) -> "PaymentResult":
         """포트원 결제 데이터로부터 PaymentResult 생성"""
+
+        def parse_datetime(val):
+            if val is None:
+                return None
+            if isinstance(val, str):
+                try:
+                    return datetime.fromisoformat(val)
+                except Exception:
+                    return None
+            try:
+                return datetime.fromtimestamp(int(val))
+            except Exception:
+                return None
+
         return cls(
             imp_uid=payment["imp_uid"],
             merchant_uid=payment["merchant_uid"],
@@ -40,7 +54,7 @@ class PaymentResult:
             payment_method=payment.get("pay_method"),
             card_name=payment.get("card_name"),
             card_number=payment.get("card_number"),
-            paid_at=payment.get("paid_at"),
+            paid_at=parse_datetime(payment.get("paid_at")),
             receipt_url=payment.get("receipt_url"),
             raw_data=payment,
         )
@@ -148,6 +162,9 @@ class PaymentService:
 
         # 5. 결제 이력 생성
         try:
+            print(
+                f"[DEBUG] 결제 이력 생성 시도: user_id={user_id}, imp_uid={result.imp_uid}, merchant_uid={result.merchant_uid}, amount={result.amount}, status={PaymentStatus.PAID}"
+            )
             payment_history = PaymentHistory.objects.create(
                 user_id=user_id,
                 imp_uid=result.imp_uid,
@@ -165,6 +182,9 @@ class PaymentService:
                 f"imp_uid={result.imp_uid}, amount={result.amount}"
             )
         except Exception as e:
+            print(
+                f"[ERROR] 결제 이력 생성 실패: user_id={user_id}, imp_uid={result.imp_uid}, merchant_uid={result.merchant_uid}, amount={result.amount}, status={PaymentStatus.PAID}, error={e}"
+            )
             logger.error(
                 f"결제 이력 생성 실패: user_id={user_id}, "
                 f"imp_uid={result.imp_uid}, error={e}"
