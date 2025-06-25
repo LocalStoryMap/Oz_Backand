@@ -12,7 +12,8 @@ class BookmarkSerializer(serializers.ModelSerializer):
     marker_name = serializers.CharField(
         source="story.marker.marker_name", read_only=True
     )
-    address = serializers.CharField(source="story.marker.adress", read_only=True)
+
+    adress = serializers.CharField(source="story.marker.adress", read_only=True)
 
     class Meta:
         model = Bookmark
