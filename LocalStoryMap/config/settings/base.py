@@ -363,7 +363,7 @@ LOGGING = {
 }
 
 # ─── 구독 가격, 기간 설정 ────────────────────────────────────
-SINGLE_PLAN_PRICE = int(os.getenv("SINGLE_PLAN_PRICE", "10000"))  # 기본 10,000원
+SINGLE_PLAN_PRICE = int(os.getenv("SINGLE_PLAN_PRICE", "4000"))  # 기본 10,000원
 SINGLE_PLAN_DURATION = int(os.getenv("SINGLE_PLAN_DURATION", "30"))  # 기본 30일
 
 # 매일 자정(00:00)에 `expire_subscriptions` 명령을 호출,
