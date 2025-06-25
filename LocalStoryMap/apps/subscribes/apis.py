@@ -3,7 +3,6 @@ from typing import cast
 
 import requests
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.http import Http404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -12,6 +11,8 @@ from rest_framework.exceptions import NotAuthenticated, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.users.models import User
 
 from .models import Subscribe
 from .serializers import SubscribeCreateSerializer, SubscribeSerializer
@@ -207,6 +208,7 @@ class SubscribeDetailAPIView(APIView):
             try:
                 sub.is_active = False
                 sub.save(update_fields=["is_active"])
+                # 구독 취소 시 is_paid_user는 만료일까지 True로 유지 (즉시 False로 변경하지 않음)
                 logger.info(
                     f"구독 취소 완료: user_id={request.user.id}, subscribe_id={subscribe_id}"
                 )

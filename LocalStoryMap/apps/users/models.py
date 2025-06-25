@@ -2,6 +2,9 @@ from typing import Any, ClassVar, List, Optional, TypeVar
 
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
+from storages.backends.s3boto3 import S3Boto3Storage
+
+s3_storage = S3Boto3Storage()
 
 UserType = TypeVar("UserType", bound="User")
 
@@ -82,7 +85,11 @@ class User(AbstractUser):
     )
     social_id = models.CharField(max_length=300, blank=True, null=True)
     profile_image = models.ImageField(
-        upload_to="profile_images/", max_length=300, blank=True, null=True
+        upload_to="profile_images/%Y/%m/%d/",
+        storage=s3_storage,
+        max_length=300,
+        blank=True,
+        null=True,
     )
     is_paid_user = models.BooleanField(default=False)
 

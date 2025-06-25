@@ -1,5 +1,6 @@
 import csv
 import os
+import uuid
 
 import requests
 from django.conf import settings
@@ -32,11 +33,13 @@ class Command(BaseCommand):
                     try:
                         response = requests.get(image_url, timeout=10)
                         if response.status_code == 200:
-                            # 파일명에서 확장자를 무조건 .jpg로 변경
                             base_name = os.path.basename(image_url)
                             if "." in base_name:
                                 base_name = os.path.splitext(base_name)[0]
-                            file_name = base_name + ".jpg"
+                            # 고유 파일명 생성 (UUID 활용)
+                            file_name = (
+                                f"{base_name}_{uuid.uuid4().hex}.jpg"  # 랜덤 UUID + .jpg
+                            )
                             marker.image.save(
                                 file_name, ContentFile(response.content), save=False
                             )

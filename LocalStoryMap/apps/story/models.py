@@ -46,6 +46,7 @@ class StoryLike(models.Model):
     story = models.ForeignKey(Story, on_delete=models.CASCADE, related_name="likes")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="story_likes")
     created_at = models.DateTimeField(auto_now_add=True)
+    like_count = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = "story_like"
@@ -61,6 +62,7 @@ class CommentLike(models.Model):
         User, on_delete=models.CASCADE, related_name="comment_likes"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    like_count = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = "story_comment_like"

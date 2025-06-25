@@ -8,13 +8,51 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env_path = BASE_DIR / ".env"
 if env_path.exists():
     load_dotenv(env_path)
-    os.environ.setdefault(
-        "DJANGO_SETTINGS_MODULE",
-        os.getenv("DJANGO_SETTINGS_MODULE", "config.settings.dev"),
-    )
 
-# ─── 스토리지 설정 플래그 ─────────────────────────────────
-USE_S3_STORAGE = os.getenv("USE_S3_STORAGE", "false").lower() == "true"
+# ─── S3 환경 변수 설정 ───────────────────────────────
+AWS_ACCESS_KEY_ID = os.getenv("NCP_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = os.getenv("NCP_SECRET_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("NCP_BUCKET_NAME")
+AWS_S3_REGION_NAME = "kr-standard"
+AWS_S3_ENDPOINT_URL = "https://kr.object.ncloudstorage.com"
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com"
+AWS_S3_ADDRESSING_STYLE = "path"
+AWS_QUERYSTRING_AUTH = False
+AWS_DEFAULT_ACL = "public-read"
+AWS_S3_OBJECT_PARAMETERS = {"ACL": "public-read"}
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+
+# ─── S3 환경 변수 설정 ───────────────────────────────
+AWS_ACCESS_KEY_ID = os.getenv("NCP_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = os.getenv("NCP_SECRET_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("NCP_BUCKET_NAME")
+AWS_S3_REGION_NAME = "kr-standard"
+AWS_S3_ENDPOINT_URL = "https://kr.object.ncloudstorage.com"
+AWS_S3_ADDRESSING_STYLE = "path"
+AWS_QUERYSTRING_AUTH = False
+AWS_DEFAULT_ACL = "public-read"
+AWS_S3_OBJECT_PARAMETERS = {"ACL": "public-read"}
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+
+# ─── 스토리지 설정 ────────────────────────────────────
+# 모든 파일(미디어/정적)을 S3에 저장하도록 강제합니다
+default_s3_storage = "storages.backends.s3boto3.S3Boto3Storage"
+
+# 미디어 파일 설정
+DEFAULT_FILE_STORAGE = default_s3_storage
+MEDIA_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com/media/"
+
+# 정적 파일 설정
+STATICFILES_STORAGE = default_s3_storage
+STATIC_URL = f"https://{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com/static/"
+# ─── 정적 파일 (STATIC) 설정 ─────────────────────────
+STATIC_URL = "/static/"
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STATICFILES_DIRS = [BASE_DIR / "frontend_static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# ─── 로컬 미디어 루트 (장고에서 필요 시 사용) ────────
+MEDIA_ROOT = BASE_DIR / "media"
 
 # ─── Sentry SDK 초기화 ───────────────────────────────────────
 import sentry_sdk
@@ -36,34 +74,6 @@ if SENTRY_DSN:
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key-if-not-set")
 DEBUG = True
 ROOT_URLCONF = "config.urls"
-
-# ─── S3(Object Storage) 환경변수 매핑 ────────────────────
-AWS_ACCESS_KEY_ID = os.getenv("NCP_ACCESS_KEY")
-AWS_SECRET_ACCESS_KEY = os.getenv("NCP_SECRET_KEY")
-AWS_STORAGE_BUCKET_NAME = os.getenv("NCP_BUCKET_NAME")
-AWS_S3_REGION_NAME = "kr-standard"
-AWS_S3_ENDPOINT_URL = "https://kr.object.ncloudstorage.com"
-AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.kr.object.ncloudstorage.com"
-AWS_S3_ADDRESSING_STYLE = "path"
-AWS_QUERYSTRING_AUTH = False
-AWS_DEFAULT_ACL = "public-read"
-AWS_S3_OBJECT_PARAMETERS = {"ACL": "public-read"}
-
-# 정적 파일은 로컬에서 서빙
-STATIC_URL = "/static/"
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
-STATICFILES_DIRS = [BASE_DIR / "frontend_static"]
-STATIC_ROOT = BASE_DIR / "static"
-
-#  media 경로 prefix 없이 저장하고 URL 직접 매핑
-if USE_S3_STORAGE:
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
-else:
-    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
-    MEDIA_URL = "/media/"
-    MEDIA_ROOT = BASE_DIR / "media"
-
 # ─── 데이터베이스 설정 ─────────────────────────────────────
 DATABASES = {
     "default": {
@@ -71,7 +81,6 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
 # ─── 앱 등록 ─────────────────────────────────────────────
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -267,7 +276,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
         "rest_framework.permissions.IsAuthenticated",
-        "apps.subscribes.permissions.IsActiveSubscriber",  # 구독 permission 관리
+        "apps.subscribes.permissions.SubscriberPermission",  # 구독 permission 관리
     ],
     # 렌더러 클래스 추가
     "DEFAULT_RENDERER_CLASSES": [
@@ -354,7 +363,7 @@ LOGGING = {
 }
 
 # ─── 구독 가격, 기간 설정 ────────────────────────────────────
-SINGLE_PLAN_PRICE = int(os.getenv("SINGLE_PLAN_PRICE", "10000"))  # 기본 10,000원
+SINGLE_PLAN_PRICE = int(os.getenv("SINGLE_PLAN_PRICE", "4000"))  # 기본 10,000원
 SINGLE_PLAN_DURATION = int(os.getenv("SINGLE_PLAN_DURATION", "30"))  # 기본 30일
 
 # 매일 자정(00:00)에 `expire_subscriptions` 명령을 호출,
