@@ -1,5 +1,9 @@
+import logging
 from urllib.parse import unquote
 
+import requests
+from django.core.files.base import ContentFile
+from django.db import transaction
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -7,6 +11,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
@@ -67,21 +72,29 @@ class KakaoLoginView(APIView):
                 # 다른 provider로 가입된 동일 이메일이 있는지 확인
                 existing = User.objects.filter(email=email).first()
                 if existing:
-                    # 이메일 중복 사용자 -> kakao 정보로 업데이트
-                    existing.nickname = nickname or existing.nickname
+                    # 이메일 중복 사용자 -> 로그인만 갱신, 프로필 정보는 유지
                     existing.provider = "kakao"
                     existing.social_id = social_id
-                    existing.profile_image = profile_image or existing.profile_image
                     existing.last_login = timezone.now()
-                    existing.save(
-                        update_fields=[
-                            "nickname",
-                            "provider",
-                            "social_id",
-                            "profile_image",
-                            "last_login",
-                        ]
-                    )
+                    set_nick = not existing.nickname and bool(nickname)
+                    set_image = not existing.profile_image and bool(profile_image)
+
+                    update_fields = ["provider", "social_id", "last_login"]
+                    if set_nick:
+                        existing.nickname = nickname
+                        update_fields.append("nickname")
+                    if set_image:
+                        resp = requests.get(profile_image)
+                        if resp.status_code == 200:
+                            ext = profile_image.split("?")[0].rsplit(".", 1)[-1]
+                            fname = f"profile_{existing.id}.{ext}"
+                            existing.profile_image.save(
+                                fname,
+                                ContentFile(resp.content),
+                                save=False,
+                            )
+                        update_fields.append("profile_image")
+                    existing.save(update_fields=update_fields)
                     user = existing
                     created = False
                 else:
@@ -91,8 +104,15 @@ class KakaoLoginView(APIView):
                         nickname=nickname or "",
                         provider="kakao",
                         social_id=social_id,
-                        profile_image=profile_image or "",
                     )
+                    if profile_image:
+                        resp = requests.get(profile_image)
+                        if resp.status_code == 200:
+                            ext = profile_image.split("?")[0].rsplit(".", 1)[-1]
+                            fname = f"profile_{user.id}.{ext}"
+                            user.profile_image.save(
+                                fname, ContentFile(resp.content), save=True
+                            )
                     created = True
 
             # 4) JWT 토큰 발급
@@ -158,33 +178,63 @@ class GoogleLoginView(APIView):
         name = user_info.get("name")
         picture = user_info.get("picture", "")
 
-        # 2) provider="google" & social_id 일치하는 유저 존재 확인
+        # 2) 기존 Google 유저가 있는지 조회
         user = User.objects.filter(provider="google", social_id=google_sub).first()
         if user:
-            # 기존 유저: nickname, 프로필, 마지막 로그인 시간 업데이트
-            user.nickname = name or user.nickname
-            user.profile_image = picture or user.profile_image
+            update_fields = []
+            # 2-1) 마지막 로그인 시간은 항상 갱신
             user.last_login = timezone.now()
-            user.save(update_fields=["nickname", "profile_image", "last_login"])
+            update_fields.append("last_login")
+
+            # 2-2) 닉네임이 비어 있을 때만 Google 이름으로 설정
+            if not user.nickname and name:
+                user.nickname = name
+                update_fields.append("nickname")
+
+            # 2-3) 프로필 이미지가 없을 때만 설정
+            if picture and not user.profile_image:
+                resp = requests.get(picture)
+                if resp.status_code == 200:
+                    ext = picture.split("?")[0].rsplit(".", 1)[-1]
+                    fname = f"profile_{user.id}.{ext}"
+                    user.profile_image.save(
+                        fname,
+                        ContentFile(resp.content),
+                        save=False,
+                    )
+                update_fields.append("profile_image")
+
+            user.save(update_fields=update_fields)
             created = False
+
         else:
             # 이메일로 가입된 유저가 있는지 확인
             existing = User.objects.filter(email=email).first()
             if existing:
-                existing.nickname = name or existing.nickname
                 existing.provider = "google"
                 existing.social_id = google_sub
-                existing.profile_image = picture or existing.profile_image
                 existing.last_login = timezone.now()
-                existing.save(
-                    update_fields=[
-                        "nickname",
-                        "provider",
-                        "social_id",
-                        "profile_image",
-                        "last_login",
-                    ]
-                )
+
+                set_nick = not existing.nickname and bool(name)
+                set_image = not existing.profile_image and bool(picture)
+
+                update_fields = ["provider", "social_id", "last_login"]
+                if set_nick:
+                    existing.nickname = name
+                    update_fields.append("nickname")
+                if set_image:
+                    resp = requests.get(picture)
+                    if resp.status_code == 200:
+                        ext = picture.split("?")[0].rsplit(".", 1)[-1]
+                        fname = f"profile_{existing.id}.{ext}"
+                        existing.profile_image.save(
+                            fname,
+                            ContentFile(resp.content),
+                            save=False,
+                        )
+                    update_fields.append("profile_image")
+                existing.save(update_fields=update_fields)
+
                 user = existing
                 created = False
             else:
@@ -194,9 +244,17 @@ class GoogleLoginView(APIView):
                     nickname=name or "",
                     provider="google",
                     social_id=google_sub,
-                    profile_image=picture,
                 )
                 created = True
+
+                if picture:
+                    resp = requests.get(picture)
+                    if resp.status_code == 200:
+                        ext = picture.split("?")[0].rsplit(".", 1)[-1]
+                        fname = f"profile_{user.id}.{ext}"
+                        user.profile_image.save(
+                            fname, ContentFile(resp.content), save=True
+                        )
 
         # 5) JWT 발급 및 응답
         refresh = RefreshToken.for_user(user)
@@ -260,13 +318,10 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
 
-class WithdrawView(APIView):
-    """
-    회원탈퇴 API
-    - 인증된 유저만 호출할 수 있습니다.
-    - DELETE 메서드로 호출 시, 해당 user 인스턴스를 삭제합니다.
-    """
+logger = logging.getLogger(__name__)
 
+
+class WithdrawView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @swagger_auto_schema(
@@ -275,25 +330,49 @@ class WithdrawView(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 "refresh": openapi.Schema(
-                    type=openapi.TYPE_STRING, description="리프레시 토큰"
+                    type=openapi.TYPE_STRING, description="리프레시 토큰 (필수)"
                 ),
             },
-            required=[],
+            required=["refresh"],
         ),
         responses={
             204: openapi.Response(description="회원 탈퇴 성공"),
-            400: openapi.Response(description="요청 형식이 잘못된 경우"),
+            400: openapi.Response(description="refresh 토큰을 전달해주세요."),
         },
     )
     def delete(self, request):
-        user = request.user
-        # 리프레시 토큰을 블랙리스트에 넣움
         refresh_token = request.data.get("refresh")
-        if refresh_token:
-            RefreshToken(refresh_token).blacklist()
-        # 2) 사용자 계정 삭제
-        user.delete()
-        # 3) 204 No Content 응답
+        if not refresh_token:
+            return Response(
+                {"detail": "refresh 토큰을 전달해주세요."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = request.user
+        try:
+            with transaction.atomic():
+                # 0) 클라이언트가 보낸 refresh 토큰도 블랙리스트
+                try:
+                    RefreshToken(refresh_token).blacklist()
+                except Exception:
+                    pass
+
+                # 1) OutstandingToken을 순회하며 개별 예외 무시하고 블랙리스트
+                for outstanding in OutstandingToken.objects.filter(user=user):
+                    try:
+                        RefreshToken(str(outstanding.token)).blacklist()
+                    except Exception:
+                        # 이미 블랙리스트된 토큰이거나 기타 오류인 경우 무시
+                        continue
+
+                # 2) 회원 계정 삭제
+                user.delete()
+
+        except Exception as exc:
+            logger.error("WithdrawView error", exc_info=exc)
+            return Response(
+                {"detail": "회원 탈퇴 처리 중 오류가 발생했습니다."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

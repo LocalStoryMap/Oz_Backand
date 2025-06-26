@@ -276,7 +276,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
         "rest_framework.permissions.IsAuthenticated",
-        "apps.subscribes.permissions.IsActiveSubscriber",  # 구독 permission 관리
+        "apps.subscribes.permissions.SubscriberPermission",  # 구독 permission 관리
     ],
     # 렌더러 클래스 추가
     "DEFAULT_RENDERER_CLASSES": [
@@ -321,8 +321,17 @@ GOOGLE_OAUTH2_REDIRECT_URI = os.getenv(
 # ─── 캐시 설정 ────────────────────────────────────────────
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": [
+            "redis://redisc-35hu0n.vpc-cdb.ntruss.com:6379/0",
+            "redis://redisc-35hu0q.vpc-cdb.ntruss.com:6379/0",
+            "redis://redisc-35hu0t.vpc-cdb.ntruss.com:6379/0",
+        ],
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # 필요하면 비밀번호 추가:
+            # "PASSWORD": "<your-redis-password>",
+        },
     }
 }
 
@@ -363,7 +372,7 @@ LOGGING = {
 }
 
 # ─── 구독 가격, 기간 설정 ────────────────────────────────────
-SINGLE_PLAN_PRICE = int(os.getenv("SINGLE_PLAN_PRICE", "10000"))  # 기본 10,000원
+SINGLE_PLAN_PRICE = int(os.getenv("SINGLE_PLAN_PRICE", "4000"))  # 기본 10,000원
 SINGLE_PLAN_DURATION = int(os.getenv("SINGLE_PLAN_DURATION", "30"))  # 기본 30일
 
 # 매일 자정(00:00)에 `expire_subscriptions` 명령을 호출,

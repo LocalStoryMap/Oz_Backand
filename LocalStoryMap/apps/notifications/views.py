@@ -1,14 +1,23 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from .models import NotificationSetting
 from .serializers import NotificationSettingSerializer
 
 
-class NotificationSettingViewSet(viewsets.ModelViewSet):
+class NotificationSettingViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     """
-    알림 설정 CRUD
+    알림 설정
+    - GET    /notifications/       : 목록 조회
+    - POST   /notifications/       : 생성 또는 수정(upsert)
+    - DELETE /notifications/{id}/  : 삭제
     """
 
     serializer_class = NotificationSettingSerializer
@@ -28,23 +37,21 @@ class NotificationSettingViewSet(viewsets.ModelViewSet):
         operation_description="사용자의 알림 설정을 생성하거나 수정합니다.",
     )
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        user = request.user
+        setting_type = request.data.get("type")
+        enabled = request.data.get("enabled", True)
 
-    @swagger_auto_schema(
-        tags=["notifications"],
-        operation_summary="알림 설정 상세 조회",
-        operation_description="특정 알림 설정의 상세 정보를 조회합니다.",
-    )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        instance, created = NotificationSetting.objects.update_or_create(
+            user=user,
+            type=setting_type,
+            defaults={"enabled": enabled},
+        )
 
-    @swagger_auto_schema(
-        tags=["notifications"],
-        operation_summary="알림 설정 수정",
-        operation_description="기존 알림 설정을 업데이트합니다.",
-    )
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
+        serializer = self.get_serializer(instance)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
     @swagger_auto_schema(
         tags=["notifications"],
@@ -55,10 +62,7 @@ class NotificationSettingViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
-        user = self.request.user
-        if not user.is_authenticated:
+        # 스웨거 스키마 생성 중에는 실제 사용자 체크가 불가능하기 때문에 빈 QuerySet 반환
+        if getattr(self, "swagger_fake_view", False):
             return NotificationSetting.objects.none()
-        return NotificationSetting.objects.filter(user=user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        return NotificationSetting.objects.filter(user=self.request.user)
