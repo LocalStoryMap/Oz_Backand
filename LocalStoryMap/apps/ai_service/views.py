@@ -75,7 +75,7 @@ class SummarizeAPIView(APIView):
 
 class ChatAPIView(APIView):
     """
-    POST /api/ai/chat/
+    .POST /api/ai/chat/
     {
         "messages": [
             { "role": "system", "content": "너는 ~~~"},
