@@ -40,9 +40,19 @@ class RouteMarker(models.Model):
     def __str__(self):
         return f"{self.route.name} - {self.marker.marker_name} ({self.sequence})"
 
-    def save(self, *args, **kwargs):
-        self.clean()
+    def save(self, *args, user=None, **kwargs):
+        print(f"[DEBUG] self.route: {self.route}")
+        print(f"[DEBUG] self.route.user: {getattr(self.route, 'user', None)}")
+        if user is not None:
+            self.validate_user_permission(user)
+        self.full_clean()
         super().save(*args, **kwargs)
+
+    def validate_user_permission(self, user):
+        if not hasattr(self.route, "user"):
+            raise PermissionError("경로에 소유자 정보가 없습니다")
+        if self.route.user != user:
+            raise PermissionError("이 경로를 수정할 권한이 없습니다.")
 
     @classmethod
     def get_next_sequence(cls, route):
