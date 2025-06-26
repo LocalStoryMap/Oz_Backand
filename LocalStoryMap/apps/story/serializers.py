@@ -1,6 +1,7 @@
 from drf_yasg.utils import swagger_serializer_method
 from rest_framework import serializers
 
+from apps.bookmark.models import Bookmark
 from apps.story.models import CommentLike, Story, StoryComment, StoryLike
 from apps.storyimage.serializers import ImageSerializer
 
@@ -15,6 +16,7 @@ class FullStorySerializer(serializers.ModelSerializer):
     )
 
     is_liked = serializers.SerializerMethodField()
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
@@ -32,6 +34,7 @@ class FullStorySerializer(serializers.ModelSerializer):
             "updated_at",
             "story_images",
             "is_liked",
+            "is_bookmarked",
         ]
         read_only_fields = [
             "story_id",
@@ -41,6 +44,7 @@ class FullStorySerializer(serializers.ModelSerializer):
             "like_count",
             "created_at",
             "updated_at",
+            "is_bookmarked",
         ]
 
     @swagger_serializer_method(serializer_or_field=serializers.BooleanField())
@@ -49,6 +53,13 @@ class FullStorySerializer(serializers.ModelSerializer):
         if not user or not user.is_authenticated:
             return False
         return StoryLike.objects.filter(user=user, story=obj).exists()
+
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField())
+    def get_is_bookmarked(self, obj):
+        user = self.context.get("request").user
+        if not user or not user.is_authenticated:
+            return False
+        return Bookmark.objects.filter(user=user, story=obj).exists()
 
 
 class BasicStorySerializer(serializers.ModelSerializer):
@@ -60,6 +71,7 @@ class BasicStorySerializer(serializers.ModelSerializer):
         many=True, read_only=True, source="storyimages"
     )  # related_name에 맞게 수정
     is_liked = serializers.SerializerMethodField()
+    is_bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Story
@@ -77,6 +89,7 @@ class BasicStorySerializer(serializers.ModelSerializer):
             "updated_at",
             "story_images",
             "is_liked",
+            "is_bookmarked",
         ]
         read_only_fields = fields[:]
 
@@ -86,6 +99,13 @@ class BasicStorySerializer(serializers.ModelSerializer):
         if not user or not user.is_authenticated:
             return False
         return StoryLike.objects.filter(user=user, story=obj).exists()
+
+    @swagger_serializer_method(serializer_or_field=serializers.BooleanField())
+    def get_is_bookmarked(self, obj):
+        user = self.context.get("request").user
+        if not user or not user.is_authenticated:
+            return False
+        return Bookmark.objects.filter(user=user, story=obj).exists()
 
 
 class CommentSerializer(serializers.ModelSerializer):
