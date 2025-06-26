@@ -1,19 +1,21 @@
 from rest_framework import serializers
 
+from apps.story.serializers import (  # FullStorySerializer import 경로 주의
+    FullStorySerializer,
+)
+
 from .models import Bookmark, Story
 
 
 class BookmarkSerializer(serializers.ModelSerializer):
-    # create 시엔 write_only로 story_id만 받고, response 땐 포함 안 함
-    story = serializers.PrimaryKeyRelatedField(queryset=Story.objects.all())
-    # 읽기 전용으로 response에만 포함
-    marker_name = serializers.CharField(
-        source="story.marker.marker_name", read_only=True
+    # create 시에는 story ID만 받고
+    story = serializers.PrimaryKeyRelatedField(
+        queryset=Story.objects.all(), write_only=True
     )
-
-    adress = serializers.CharField(source="story.marker.adress", read_only=True)
+    # 읽을 때는 스토리 전체 데이터 반환
+    story_detail = FullStorySerializer(source="story", read_only=True)
 
     class Meta:
         model = Bookmark
-        fields = ["id", "story", "marker_name", "adress"]
+        fields = ["id", "story", "story_detail"]
         read_only_fields = ["id"]
