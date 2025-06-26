@@ -1,59 +1,23 @@
-from django.utils.decorators import method_decorator
+from django.shortcuts import get_object_or_404
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import mixins, permissions, viewsets
+from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from .models import Bookmark
+from .models import Bookmark, Story
 from .serializers import BookmarkSerializer
 
 
-@method_decorator(
-    name="list",
-    decorator=swagger_auto_schema(
-        tags=["북마크"],
-        operation_summary="스토리 북마크 목록 조회",
-        responses={
-            200: openapi.Response(
-                description="북마크 불러오기 성공.", schema=BookmarkSerializer(many=True)
-            )
-        },
-    ),
-)
-@method_decorator(
-    name="create",
-    decorator=swagger_auto_schema(
-        tags=["북마크"],
-        operation_summary="스토리 북마크 추가",
-        responses={
-            201: openapi.Response(
-                description="북마크 추가됨.", schema=BookmarkSerializer()  # 단일 객체 응답
-            )
-        },
-    ),
-)
-@method_decorator(
-    name="destroy",
-    decorator=swagger_auto_schema(
-        tags=["북마크"],
-        operation_summary="스토리 북마크 삭제",
-        responses={204: openapi.Response(description="북마크 삭제됨.", schema=None)},
-    ),
-)
 class BookmarkViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,  # GET    /bookmarks/
+    mixins.DestroyModelMixin,  # DELETE /bookmarks/{id}/
     viewsets.GenericViewSet,
 ):
     """
-    list:
-    Return a list of the current user's bookmarks.
-
-    create:
-    Bookmark a story for the current user.
-
-    destroy:
-    Remove a bookmark by its ID.
+    GET    /bookmarks/           → 북마크 목록 조회
+    POST   /bookmarks/{id}/      → 스토리 PK로 북마크 추가
+    DELETE /bookmarks/{id}/      → 북마크 삭제
     """
 
     serializer_class = BookmarkSerializer
@@ -62,7 +26,58 @@ class BookmarkViewSet(
     def get_queryset(self):
         return Bookmark.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        # nested URL에서 story_pk를 꺼내와 바인딩
-        story_id = self.kwargs.get("story_pk")
-        serializer.save(user=self.request.user, story_id=story_id)
+    # --- list ---
+    @swagger_auto_schema(
+        tags=["북마크"],
+        operation_summary="북마크 목록 조회",
+        responses={
+            200: openapi.Response(
+                description="북마크 목록 반환",
+                schema=BookmarkSerializer(many=True),
+            )
+        },
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    # --- add (POST /bookmarks/{id}/) ---
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="",  # ← 빈문자열로 지정해야 /add/ 가 사라집니다
+        url_name="add",  # ← operationId/bookmarks_add 로 문서화됩니다
+    )
+    @swagger_auto_schema(
+        tags=["북마크"],
+        operation_summary="스토리 북마크 추가",
+        responses={
+            201: openapi.Response(
+                description="북마크 추가됨",
+                schema=BookmarkSerializer(),
+            ),
+            200: openapi.Response(
+                description="이미 북마크가 존재함",
+                schema=BookmarkSerializer(),
+            ),
+        },
+    )
+    def add(self, request, pk=None):
+        """POST /bookmarks/{pk}/ → story_id=pk"""
+        story = get_object_or_404(Story, pk=pk)
+        bookmark, created = Bookmark.objects.get_or_create(
+            user=request.user, story=story
+        )
+        serializer = self.get_serializer(bookmark)
+        return Response(
+            data=serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    # --- destroy (DELETE /bookmarks/{id}/) ---
+    @swagger_auto_schema(
+        tags=["북마크"],
+        operation_summary="스토리 북마크 삭제",
+        responses={204: openapi.Response(description="북마크 삭제됨", schema=None)},
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
