@@ -38,9 +38,9 @@ class SummarizeAPIView(APIView):
         },
     )
     def post(self, request, *args, **kwargs):
+        clova = ClovaClient()
         serializer = SummarizeRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        clova = ClovaClient()
 
         marker_id = serializer.validated_data.get("marker_id")
         raw_text = serializer.validated_data.get("raw_text")
@@ -98,9 +98,9 @@ class ChatAPIView(APIView):
         },
     )
     def post(self, request, *args, **kwargs):
+        clova = ClovaClient()
         serializer = ChatRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        clova = ClovaClient()
 
         messages = serializer.validated_data["messages"]
 
