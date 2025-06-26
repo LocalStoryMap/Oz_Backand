@@ -10,8 +10,6 @@ from apps.marker.models import Marker
 from .serializers import ChatRequestSerializer, SummarizeRequestSerializer
 from .utils.clova_client import ClovaClient
 
-clova = ClovaClient()
-
 
 class SummarizeAPIView(APIView):
     """
@@ -40,6 +38,7 @@ class SummarizeAPIView(APIView):
         },
     )
     def post(self, request, *args, **kwargs):
+        clova = ClovaClient()
         serializer = SummarizeRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -99,6 +98,7 @@ class ChatAPIView(APIView):
         },
     )
     def post(self, request, *args, **kwargs):
+        clova = ClovaClient()
         serializer = ChatRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
