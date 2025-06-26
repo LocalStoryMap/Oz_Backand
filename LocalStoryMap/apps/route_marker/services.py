@@ -12,6 +12,7 @@ from .serializers import (
 
 
 class RouteMarkerService:
+    @staticmethod
     def list_connections(user, filters: dict):
         # 조건에 맞는 경로-마커 연결 목록 조회
         queryset = RouteMarker.objects.select_related("route", "marker").filter(
@@ -24,6 +25,7 @@ class RouteMarkerService:
 
         return queryset.distinct()
 
+    @staticmethod
     def create_connection(request, data: dict) -> RouteMarker:
         # 경로-마커 연결 생성
         serializer = RouteMarkerCreateSerializer(
@@ -32,6 +34,7 @@ class RouteMarkerService:
         serializer.is_valid(raise_exception=True)
         return serializer.save()
 
+    @staticmethod
     def update_connection(user, route_marker: RouteMarker, data: dict) -> RouteMarker:
         # 경로-마커 연결 정보 수정
         if route_marker.route.user != user:
@@ -43,12 +46,14 @@ class RouteMarkerService:
         serializer.is_valid(raise_exception=True)
         return serializer.save()
 
+    @staticmethod
     def delete_connection(user, route_marker: RouteMarker) -> None:
         # 경로-마커 연결 해제
         if route_marker.route.user != user:
             raise PermissionError("이 연결을 삭제할 권한이 없습니다.")
         route_marker.delete()
 
+    @staticmethod
     def bulk_reorder_markers(user, route_id: int, markers_data: list) -> None:
         # 경로 내 마커 순서를 일괄 변경
         route = Route.objects.get(pk=route_id)

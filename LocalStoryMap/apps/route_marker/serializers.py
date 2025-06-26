@@ -40,6 +40,21 @@ class RouteMarkerCreateSerializer(serializers.ModelSerializer):
         model = RouteMarker
         fields = ["route_id", "marker_id", "sequence"]
 
+    def create(self, validated_data):
+        # 권한 검증을 위해 context에서 user 추출
+        user = self.context["request"].user
+
+        # 직접 인스턴스 생성 (저장 없음)
+        instance = RouteMarker(
+            route=validated_data["route"],
+            marker=validated_data["marker"],
+            sequence=validated_data["sequence"],
+        )
+
+        # 모델의 save()에 user 전달하여 저장
+        instance.save(user=user)
+        return instance
+
     def validate(self, attrs):
         route = attrs.get("route")
         marker = attrs.get("marker")

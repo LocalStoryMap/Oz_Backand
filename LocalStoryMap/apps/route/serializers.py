@@ -115,7 +115,7 @@ class RouteWithOrderedMarkersSerializer(RouteSerializer):
         # Marker에 sequence 정보를 추가
         markers_with_sequence = []
         for rm in ordered_route_markers:
-            marker_data = MarkerSerializer(rm.marker).data
+            marker_data = MarkerSerializer(rm.marker, context=self.context).data
             marker_data["sequence"] = rm.sequence
             markers_with_sequence.append(marker_data)
 

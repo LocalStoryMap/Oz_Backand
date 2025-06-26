@@ -27,7 +27,9 @@ class RouteMarkerViewSet(viewsets.ViewSet):
         connections = RouteMarkerService.list_connections(
             user=request.user, filters=filters
         )
-        serializer = RouteMarkerSerializer(connections, many=True)
+        serializer = RouteMarkerSerializer(
+            connections, many=True, context={"request": request}
+        )
         return Response(serializer.data)
 
     def create(self, request):
@@ -36,7 +38,7 @@ class RouteMarkerViewSet(viewsets.ViewSet):
             connection = RouteMarkerService.create_connection(
                 request=request, data=request.data
             )
-            serializer = RouteMarkerSerializer(connection)
+            serializer = RouteMarkerSerializer(connection, context={"request": request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -48,7 +50,9 @@ class RouteMarkerViewSet(viewsets.ViewSet):
             updated_connection = RouteMarkerService.update_connection(
                 user=request.user, route_marker=route_marker, data=request.data
             )
-            serializer = RouteMarkerSerializer(updated_connection)
+            serializer = RouteMarkerSerializer(
+                updated_connection, context={"request": request}
+            )
             return Response(serializer.data)
         except PermissionError as e:
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
@@ -68,7 +72,6 @@ class RouteMarkerViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["put"], url_path="bulk-update")
     def bulk_update(self, request):
-        # PUT /api/route-markers/bulk-update: 순서 일괄 변경
         serializer = RouteMarkerBulkUpdateSerializer(
             data=request.data, context={"request": request}
         )
@@ -80,6 +83,7 @@ class RouteMarkerViewSet(viewsets.ViewSet):
                     route_id=validated_data["route_id"],
                     markers_data=validated_data["markers"],
                 )
+                # 성공 응답에도 컨텍스트 전달이 필요한 경우
                 return Response({"success": True, "message": "마커 순서가 성공적으로 변경되었습니다."})
             except Exception as e:
                 return Response(
