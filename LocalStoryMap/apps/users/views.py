@@ -86,7 +86,10 @@ class KakaoLoginView(APIView):
                     if set_image:
                         resp = requests.get(profile_image)
                         if resp.status_code == 200:
-                            ext = profile_image.split("?")[0].rsplit(".", 1)[-1]
+                            # URL 끝의 '/' 제거 → '…/profile_42.q70'
+                            raw = profile_image.split("?", 1)[0].rstrip("/")
+                            # 파일명에서 확장자 분리, 없으면 jpg 사용
+                            ext = raw.rsplit(".", 1)[-1] if "." in raw else "jpg"
                             fname = f"profile_{existing.id}.{ext}"
                             existing.profile_image.save(
                                 fname,
@@ -108,7 +111,8 @@ class KakaoLoginView(APIView):
                     if profile_image:
                         resp = requests.get(profile_image)
                         if resp.status_code == 200:
-                            ext = profile_image.split("?")[0].rsplit(".", 1)[-1]
+                            raw = profile_image.split("?", 1)[0].rstrip("/")
+                            ext = raw.rsplit(".", 1)[-1] if "." in raw else "jpg"
                             fname = f"profile_{user.id}.{ext}"
                             user.profile_image.save(
                                 fname, ContentFile(resp.content), save=True
