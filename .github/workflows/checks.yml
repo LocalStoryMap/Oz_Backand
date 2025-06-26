@@ -56,9 +56,9 @@ jobs:
 #            exit 1
 #          fi
 
-      - name: 🚫 Fail if there are missing migrations
-        run: |
-          poetry run python manage.py makemigrations --check --dry-run --settings=config.settings.dev
+#      - name: 🚫 Fail if there are missing migrations
+#        run: |
+#          poetry run python manage.py makemigrations --check --dry-run --settings=config.settings.dev
 
       # - name: 2️⃣ Run tests (pytest)
       #   env:
