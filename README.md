@@ -1,6 +1,6 @@
-# Oz_Backand
-local story map(합동프로젝트)
-# 1. Intro
+# Local Story Map(합동프로젝트)
+
+## 1. Intro
 
 ---
 
@@ -11,7 +11,7 @@ local story map(합동프로젝트)
     - 백엔드 : 송희태, 배현우, 이준호, 노지민, 홍승우
 - **배포 링크 :** www.localstorymap.com
 
-# 2. Project
+## 2. Project
 
 ---
 
