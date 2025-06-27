@@ -1,4 +1,5 @@
 # Local Story Map(합동프로젝트)
+<img width="1710" alt="스크린샷 2025-06-27 13 10 25" src="https://github.com/user-attachments/assets/66b0bea0-188c-4cce-89a0-8cff8292ecc2" />
 
 ## 1. Intro
 
