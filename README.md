@@ -24,8 +24,8 @@
 
 “지도 위에 감정을 새기다 - 나만의 여정을 이야기로 남기고, 함께 공감하는 공간.”
 
-## 기능별 시연 영상
-https://www.youtube.com/watch?v=Oq9uaayZLzM 
+## 🎥 기능별 시연 영상
+[![구현 영상 바로가기](https://img.youtube.com/vi/Oq9uaayZLzM/0.jpg)](https://www.youtube.com/watch?v=Oq9uaayZLzM&t=7s)
 
 ## 🚀 주요 기능
 ### ✅ 소셜 로그인 및 구독 시스템
