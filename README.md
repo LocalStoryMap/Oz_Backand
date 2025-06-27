@@ -25,7 +25,7 @@
 “지도 위에 감정을 새기다 - 나만의 여정을 이야기로 남기고, 함께 공감하는 공간.”
 
 ## 기능별 시연 영상
-
+https://www.youtube.com/watch?v=Oq9uaayZLzM 
 
 ## 🚀 주요 기능
 ### ✅ 소셜 로그인 및 구독 시스템
@@ -75,6 +75,7 @@ Kakao / Google 로그인 지원: 간편한 로그인으로 빠르게 시작
 ### 1. [테이블 명세서 첨부파일](https://github.com/user-attachments/files/20938656/LocalStoryMap.Bankand3Team.ERD.xlsx)
 
 ### 2. [ERD](https://www.erdcloud.com/d/pxqBHLGA2usnMJ7QW)
+
 ### 3. [API 명세서 첨부파일](https://github.com/user-attachments/files/20938664/LocalStoryMap.Bankand3Team.API.xlsx)
 
 ### 4. [사용자 요구사항 정의서 첨부파일](https://github.com/user-attachments/files/20938603/_R1.pdf)
