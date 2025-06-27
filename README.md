@@ -70,6 +70,11 @@ Kakao / Google 로그인 지원: 간편한 로그인으로 빠르게 시작
     <img src="https://img.shields.io/badge/NCP-232F3E?style=for-the-badge&logo=NCP&logoColor=white">
 </div>
 
+<h2>🔱 Architecture</h2>
+
+![image](https://github.com/user-attachments/assets/56da3cc9-d875-4d5a-898d-e94666fb7e71)
+
+
 <h2>📋 Documents</h2>
 
 ### 1. [테이블 명세서 첨부파일](https://github.com/user-attachments/files/20938656/LocalStoryMap.Bankand3Team.ERD.xlsx)
