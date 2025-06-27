@@ -80,4 +80,4 @@ Kakao / Google 로그인 지원: 간편한 로그인으로 빠르게 시작
 ### 4. [사용자 요구사항 정의서 첨부파일](https://github.com/user-attachments/files/20938603/_R1.pdf)
 
 ### 5. [와이어 프레임](https://www.figma.com/design/JSccwQkynWD8Eyzr9HRJ8I/%EC%98%A4%EC%A6%88_%ED%95%A9%EB%8F%99%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8_%EB%A1%9C%EC%BB%AC%EC%8A%A4%ED%86%A0%EB%A6%AC%EB%A7%B5?node-id=0-1&p=f)
-
+### 6. [화면 정의서]
