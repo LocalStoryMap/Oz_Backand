@@ -67,7 +67,7 @@ Kakao / Google 로그인 지원: 간편한 로그인으로 빠르게 시작
     <br>
     <img src="https://img.shields.io/badge/git-F05032?style=for-the-badge&logo=git&logoColor=white"> 
     <img src="https://img.shields.io/badge/postgresql-4479A1?style=for-the-badge&logo=postgresql&logoColor=white">
-    <img src="https://img.shields.io/badge/amazonaws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">
+    <img src="https://img.shields.io/badge/NCP-232F3E?style=for-the-badge&logo=NCP&logoColor=white">
 </div>
 
 <h2>📋 Documents</h2>
