@@ -71,11 +71,12 @@ Kakao / Google 로그인 지원: 간편한 로그인으로 빠르게 시작
 
 <h2>📋 Documents</h2>
 
-### 1. [테이블 명세서](https://www.notion.so/1d8caf5650aa806abf75fdc5a7f720ed)
-### 2. [ERD](https://www.erdcloud.com/d/pxqBHLGA2usnMJ7QW)
-### 3. [API 명세서](https://docs.google.com/spreadsheets/d/1TPVanhpBEOxsP9YJ_7vGjBw8hk6eE8Ff28uk38PpqBk/edit?gid=0#gid=0)
-### 4. [사용자 요구사항 정의서](https://github.com/user-attachments/files/20938603/_R1.pdf)
+### 1. [테이블 명세서 첨부파일](https://github.com/user-attachments/files/20938656/LocalStoryMap.Bankand3Team.ERD.xlsx)
 
-### 5. [화면 정의서](https://www.figma.com/design/P2UJYNcY9nlpEPGqF5oKOF/Untitled1?node-id=225-21539&t=ukzA1D7kOnQm6n8k-1)
-### 6. [플로우차트](https://www.figma.com/design/P2UJYNcY9nlpEPGqF5oKOF/Untitled1?node-id=225-21539&t=ukzA1D7kOnQm6n8k-1)
+### 2. [ERD](https://www.erdcloud.com/d/pxqBHLGA2usnMJ7QW)
+### 3. [API 명세서 첨부파일](https://github.com/user-attachments/files/20938664/LocalStoryMap.Bankand3Team.API.xlsx)
+
+### 4. [사용자 요구사항 정의서 첨부파일](https://github.com/user-attachments/files/20938603/_R1.pdf)
+
+### 5. [와이어 프레임](https://www.figma.com/design/JSccwQkynWD8Eyzr9HRJ8I/%EC%98%A4%EC%A6%88_%ED%95%A9%EB%8F%99%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8_%EB%A1%9C%EC%BB%AC%EC%8A%A4%ED%86%A0%EB%A6%AC%EB%A7%B5?node-id=0-1&p=f)
 
