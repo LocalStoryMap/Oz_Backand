@@ -69,6 +69,13 @@ Kakao / Google 로그인 지원: 간편한 로그인으로 빠르게 시작
     <img src="https://img.shields.io/badge/amazonaws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">
 </div>
 
-### 📋 Documents
----
+<h2>📋 Documents</h2>
+
+### 1. [테이블 명세서](https://www.notion.so/1d8caf5650aa806abf75fdc5a7f720ed)
+### 2. [ERD](https://www.erdcloud.com/d/pxqBHLGA2usnMJ7QW)
+### 3. [API 명세서](https://docs.google.com/spreadsheets/d/1TPVanhpBEOxsP9YJ_7vGjBw8hk6eE8Ff28uk38PpqBk/edit?gid=0#gid=0)
+### 4. [사용자 요구사항 정의서](https://github.com/user-attachments/files/20938603/_R1.pdf)
+
+### 5. [화면 정의서](https://www.figma.com/design/P2UJYNcY9nlpEPGqF5oKOF/Untitled1?node-id=225-21539&t=ukzA1D7kOnQm6n8k-1)
+### 6. [플로우차트](https://www.figma.com/design/P2UJYNcY9nlpEPGqF5oKOF/Untitled1?node-id=225-21539&t=ukzA1D7kOnQm6n8k-1)
 
